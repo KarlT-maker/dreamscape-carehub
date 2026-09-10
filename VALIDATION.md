@@ -35,3 +35,7 @@ No production database, authentication, file upload, account permissions or shar
 ## Whiteboard priority update
 
 Following ranch feedback, Today prioritizes a searchable feed/mash/care whiteboard with AM/PM filtering and profile links for the approximately 45-horse ranch. The six mock horses represent a subset. Feed/care checklists are collapsed as optional. Medication tasks/checkoffs were removed from the mock task generator. A previous Molly instruction and plan-derived medication history demonstrate the timeline. Browser acceptance remains outstanding due to the environment limitation above.
+
+## Hosting update
+
+Production export passed for all application pages, six sample profile URLs and the session profile route. The browser initializes demo dates at session start so static hosting does not freeze the whiteboard on the build date. Profile tab/query selection is client-side under Suspense. The earlier server HTTP checks predate the static export; browser acceptance is still outstanding.

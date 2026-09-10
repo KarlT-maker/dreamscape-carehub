@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { horsePath } from "@/lib/horse-path";
 import { Search } from "lucide-react";
 import { useBarn } from "./provider";
 import { dateLabel, instructionState } from "@/lib/dates";
@@ -66,11 +67,11 @@ export function CareBoard() {
         return (
           <article className="care-board-row" key={horse.id}>
             <div>
-              <Link className="medication-horse" href={"/horses/" + horse.id}>
+              <Link className="medication-horse" href={horsePath(horse.id)}>
                 {horse.name}
               </Link>
               <p className="muted">{horse.location}</p>
-              <Link className="text-link" href={"/horses/" + horse.id}>
+              <Link className="text-link" href={horsePath(horse.id)}>
                 Open profile →
               </Link>
             </div>
@@ -126,10 +127,7 @@ export function CareBoard() {
                   · {"dose" in c ? c.dose : c.quantity} · {c.schedule}
                 </div>
               ))}
-              <Link
-                className="text-link"
-                href={"/horses/" + horse.id + "?tab=Care"}
-              >
+              <Link className="text-link" href={horsePath(horse.id, "Care")}>
                 Care plan & dated instructions →
               </Link>
             </div>

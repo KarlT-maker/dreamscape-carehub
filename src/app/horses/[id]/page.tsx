@@ -1,19 +1,25 @@
-import { HorseProfile } from "@/components/horse-profile";
+import { Suspense } from "react";
+import { ProfileRoute } from "@/components/profile-route";
+export function generateStaticParams() {
+  return [
+    "molly",
+    "charlie",
+    "buddy",
+    "daisy",
+    "jasper",
+    "rosie",
+    "session",
+  ].map((id) => ({ id }));
+}
 export default async function Page({
   params,
-  searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; filter?: string }>;
 }) {
   const { id } = await params;
-  const query = await searchParams;
   return (
-    <HorseProfile
-      key={id + (query.tab ?? "") + (query.filter ?? "")}
-      id={id}
-      initialTab={query.tab}
-      historyFilter={query.filter}
-    />
+    <Suspense fallback={<div className="empty">Opening horse profile…</div>}>
+      <ProfileRoute id={id} />
+    </Suspense>
   );
 }

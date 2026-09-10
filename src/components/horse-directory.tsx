@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { horsePath } from "@/lib/horse-path";
 import { Plus, Search, X } from "lucide-react";
 import { useBarn } from "./provider";
 import { PageHeader, HorsePortrait, Empty } from "./ui";
@@ -144,7 +145,7 @@ export function HorseDirectory() {
       </div>
       <div className="horse-grid">
         {filtered.map((h) => (
-          <Link className="horse-card" key={h.id} href={"/horses/" + h.id}>
+          <Link className="horse-card" key={h.id} href={horsePath(h.id)}>
             <HorsePortrait name={h.name} />
             <div className="horse-card-body">
               <div className="row-between">

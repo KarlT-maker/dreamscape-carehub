@@ -23,7 +23,7 @@ npm start
 
 ## Stack
 
-Next.js 16.3.4, App Router, React 19, TypeScript, Tailwind CSS 4, ESLint and Lucide icons. Shared CSS tokens keep the calm green barn interface consistent. No custom backend.
+Next.js 16.3.4, App Router, React 19, TypeScript, Tailwind CSS 4, ESLint and Lucide icons. Shared CSS tokens keep the calm green barn interface consistent. No custom backend. The prototype exports static Next.js pages for private hosting.
 
 ## Prototype functionality
 
@@ -37,7 +37,7 @@ Next.js 16.3.4, App Router, React 19, TypeScript, Tailwind CSS 4, ESLint and Luc
 - Administration: workspace information and prototype limitations.
 - Responsive sidebar/top navigation, keyboard-operable tabs, visible focus and 44px task buttons.
 
-All names, treatment examples and care records are mock data, not veterinary guidance. App state is held in React context, shared across client-side navigation, and resets on refresh. No data is stored remotely. Added horses begin with no care plan. Demo events are dated relative to the initial request's Pacific date. Refresh at the beginning of a new barn day; this prototype does not automatically roll over an open session at midnight.
+All names, treatment examples and care records are mock data, not veterinary guidance. App state is held in React context, shared across client-side navigation, and resets on refresh. No data is stored remotely. Added horses begin with no care plan. Demo events are dated relative to the date the app opens in the browser (Pacific time). Refresh at the beginning of a new barn day; this prototype does not automatically roll over an open session at midnight.
 
 ## Architecture
 
@@ -66,3 +66,7 @@ See `VALIDATION.md` for performed checks and environment limitations. The comman
 5. Add photo/document storage after the care workflow is agreed.
 
 Owner accounts, payments, accounting integrations and production authentication are outside this prototype.
+
+## Private hosted preview
+
+`npm run build` exports the app to `out/`; `npm start` serves that export locally. The hosted version uses this same output. All interaction stays in the browser. A generated `/horses/session` route supports session-added horses using a query parameter; sample profiles also retain their named URLs. App state still resets on refresh. `.openai/hosting.json` identifies the private preview and its static output directory.

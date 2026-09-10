@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build": "next build",
-    "start": "next start --hostname 0.0.0.0",
+    "start": "serve out",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.mjs"
@@ -23,6 +23,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
+    "serve": "^14.2.6",
     "tailwindcss": "^4",
     "typescript": "^5.9.3"
   },
