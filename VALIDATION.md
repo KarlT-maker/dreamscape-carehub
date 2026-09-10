@@ -23,7 +23,7 @@ At 1440px desktop, 1024px and 768px tablet, and 390px mobile:
 
 1. Navigate Today → Horses → Molly → Calendar → Administration; check for clipping and horizontal page overflow.
 2. Complete a feed task; confirm progress, name and timestamp. Visit the horse profile and confirm the same completion. Undo it.
-3. Select each AM/PM progress card and use Pending only.
+3. Filter the care board by horse/paddock and AM/PM. Expand optional checklists, select each AM/PM feed progress card and use Pending only.
 4. Search by horse, owner and paddock; test a no-result search.
 5. Add a horse and open its profile. Refresh to confirm documented session reset.
 6. Inspect Molly's Care tab: current dose and scheduled future dose must be visually distinct.
@@ -31,3 +31,7 @@ At 1440px desktop, 1024px and 768px tablet, and 390px mobile:
 8. Use keyboard focus, profile arrow-key tabs and 200% zoom.
 
 No production database, authentication, file upload, account permissions or shared persistence was built or tested.
+
+## Whiteboard priority update
+
+Following ranch feedback, Today prioritizes a searchable feed/mash/care whiteboard with AM/PM filtering and profile links for the approximately 45-horse ranch. The six mock horses represent a subset. Feed/care checklists are collapsed as optional. Medication tasks/checkoffs were removed from the mock task generator. A previous Molly instruction and plan-derived medication history demonstrate the timeline. Browser acceptance remains outstanding due to the environment limitation above.

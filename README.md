@@ -27,12 +27,12 @@ Next.js 16.3.4, App Router, React 19, TypeScript, Tailwind CSS 4, ESLint and Luc
 
 ## Prototype functionality
 
-- Today: active horses, four feed/medication progress cards, care checklists, special care and today's vet/farrier visits. Completion and undo record the demo user and current Pacific time.
+- Today: a searchable feed-and-care whiteboard for a ranch of approximately 45 horses. Each row shows mash/feed quantities, preparation, AM/PM schedule, applicable medications, special instructions and future changes, with links to the profile and dated care plan. Six sample horses represent a subset, not the actual roster. Optional feed/care checklists are collapsed below the board; medication checkoffs are not required.
 - Horses: six fictional residents, search by name/owner/paddock, and a session-only Add Horse form.
 - Horse profile: identity, owner, location, today's care, current instructions, scheduled changes, appointments and recent history.
 - Care: medications, feed/mash, supplements and special instructions, with inclusive effective dates and clearly identified scheduled changes.
 - Calendar: chronological upcoming events, all nine requested event types, filters by horse/type/start date and links to profiles.
-- History: chronological per-horse timeline with category filters.
+- History: chronological per-horse timeline with category filters. Medication start/end entries come from the dated care instructions; Molly demonstrates a previous dose, current dose and scheduled future dose.
 - Photos and Documents: honest empty states; uploads are not implemented.
 - Administration: workspace information and prototype limitations.
 - Responsive sidebar/top navigation, keyboard-operable tabs, visible focus and 44px task buttons.

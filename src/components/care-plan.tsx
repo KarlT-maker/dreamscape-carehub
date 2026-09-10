@@ -25,6 +25,14 @@ export function CarePlan({ horseId }: { horseId: string }) {
             )}
             {care
               .filter((c) => c.horseId === horseId && c.kind === kind)
+              .sort((a, b) => {
+                const rank = { Current: 0, Scheduled: 1, Ended: 2 };
+                return (
+                  rank[instructionState(a, today)] -
+                    rank[instructionState(b, today)] ||
+                  b.effectiveStart.localeCompare(a.effectiveStart)
+                );
+              })
               .map((c) => {
                 const state = instructionState(c, today);
                 return (

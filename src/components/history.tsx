@@ -3,9 +3,21 @@ import { useState } from "react";
 import { useBarn } from "./provider";
 import { dateLabel } from "@/lib/dates";
 import { Empty } from "./ui";
-export function History({ horseId }: { horseId: string }) {
+export function History({
+  horseId,
+  initialFilter = "All",
+}: {
+  horseId: string;
+  initialFilter?: string;
+}) {
   const { history } = useBarn();
-  const [filter, setFilter] = useState("All");
+  const [filter, setFilter] = useState(
+    ["All", "Vet", "Farrier", "Medication", "Feed", "Weight", "Notes"].includes(
+      initialFilter,
+    )
+      ? initialFilter
+      : "All",
+  );
   const entries = history
     .filter(
       (h) => h.horseId === horseId && (filter === "All" || h.type === filter),

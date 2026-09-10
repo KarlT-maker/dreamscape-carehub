@@ -9,9 +9,19 @@ import { CarePlan } from "./care-plan";
 import { History } from "./history";
 import { age, dateLabel, instructionState } from "@/lib/dates";
 const tabs = ["Overview", "Care", "Calendar", "History", "Photos", "Documents"];
-export function HorseProfile({ id }: { id: string }) {
+export function HorseProfile({
+  id,
+  initialTab = "Overview",
+  historyFilter = "All",
+}: {
+  id: string;
+  initialTab?: string;
+  historyFilter?: string;
+}) {
   const { horses, today, tasks, events, care, history } = useBarn();
-  const [tab, setTab] = useState("Overview");
+  const [tab, setTab] = useState(
+    tabs.includes(initialTab) ? initialTab : "Overview",
+  );
   const horse = horses.find((h) => h.id === id);
   if (!horse)
     return (
@@ -188,7 +198,9 @@ export function HorseProfile({ id }: { id: string }) {
             <EventList events={events.filter((e) => e.horseId === id)} />
           </section>
         )}
-        {tab === "History" && <History horseId={id} />}
+        {tab === "History" && (
+          <History horseId={id} initialFilter={historyFilter} />
+        )}
         {tab === "Photos" && (
           <Empty>
             No photos attached. Horse images can be added when file storage is

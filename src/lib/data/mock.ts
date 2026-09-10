@@ -105,6 +105,18 @@ export function createMockData(today: string) {
   }));
   care.push(
     {
+      id: "molly-previous",
+      horseId: "molly",
+      kind: "medication",
+      name: "Prascend",
+      dose: "½ tablet",
+      schedule: "AM",
+      instructions:
+        "Previous sample instruction, replaced by the next dated care plan.",
+      effectiveStart: offsetDate(today, -40),
+      effectiveEnd: offsetDate(today, -10),
+    },
+    {
       id: "molly-med",
       horseId: "molly",
       kind: "medication",
@@ -174,18 +186,6 @@ export function createMockData(today: string) {
             ? "Beet pulp + senior feed · fully soaked"
             : "1 kg · soaked until soft",
       });
-  for (const c of care.filter(
-    (c) => c.kind === "medication" && c.effectiveStart <= today,
-  ))
-    tasks.push({
-      id: c.id,
-      horseId: c.horseId,
-      date: today,
-      category: "Medication",
-      period: c.schedule === "PM" ? "PM" : "AM",
-      title: c.name,
-      detail: c.kind === "medication" ? c.dose : "",
-    });
   tasks.push(
     {
       id: "buddy-check",
@@ -258,40 +258,56 @@ export function createMockData(today: string) {
     },
   ];
   const history: HistoryEntry[] = mockHorses.flatMap((h) =>
-    (
-      [
-        "Notes",
-        "Weight",
-        "Farrier",
-        "Feed",
-        "Medication",
-        "Vet",
-        "Photo",
-      ] as const
-    ).map((type, i) => ({
-      id: h.id + "-history-" + i,
-      horseId: h.id,
-      date: offsetDate(today, -i * 3 - 1),
-      type,
-      title: (
-        {
-          Notes: "Comfortable and settled",
-          Weight: "Weight check · 480 kg",
-          Farrier: "Routine trim completed",
-          Feed: "Mash instructions reviewed",
-          Medication: "Medication plan reviewed",
-          Vet: "Routine senior wellness visit",
-          Photo: "Arrival photo noted",
-        } as const
-      )[type],
-      detail:
-        type === "Photo"
-          ? "Demo timeline entry; no image file is attached."
-          : type === "Weight"
-            ? "Weight-tape estimate. Continue regular monitoring."
-            : "Example care record. Appetite and general comfort recorded; continue monitoring.",
-      author: "Karl (demo)",
-    })),
+    (["Notes", "Weight", "Farrier", "Feed", "Vet", "Photo"] as const).map(
+      (type, i) => ({
+        id: h.id + "-history-" + i,
+        horseId: h.id,
+        date: offsetDate(today, -i * 3 - 1),
+        type,
+        title: (
+          {
+            Notes: "Comfortable and settled",
+            Weight: "Weight check · 480 kg",
+            Farrier: "Routine trim completed",
+            Feed: "Mash instructions reviewed",
+            Medication: "Medication plan reviewed",
+            Vet: "Routine senior wellness visit",
+            Photo: "Arrival photo noted",
+          } as const
+        )[type],
+        detail:
+          type === "Photo"
+            ? "Demo timeline entry; no image file is attached."
+            : type === "Weight"
+              ? "Weight-tape estimate. Continue regular monitoring."
+              : "Example care record. Appetite and general comfort recorded; continue monitoring.",
+        author: "Karl (demo)",
+      }),
+    ),
   );
+  for (const item of care) {
+    if (item.kind !== "medication" || item.effectiveStart > today) continue;
+    history.push({
+      id: item.id + "-started",
+      horseId: item.horseId,
+      date: item.effectiveStart,
+      type: "Medication",
+      title: item.name + " · " + item.dose + " · " + item.schedule,
+      detail: "Instruction effective from this date. " + item.instructions,
+      author: "Care plan (demo)",
+    });
+    if (item.effectiveEnd && item.effectiveEnd < today)
+      history.push({
+        id: item.id + "-ended",
+        horseId: item.horseId,
+        date: item.effectiveEnd,
+        type: "Medication",
+        title: item.name + " · " + item.dose + " instruction ended",
+        detail:
+          "Last effective day of this instruction. See the care plan for subsequent changes.",
+        author: "Care plan (demo)",
+      });
+  }
+  history.sort((a, b) => b.date.localeCompare(a.date));
   return { horses: mockHorses, care, tasks, events, history };
 }
