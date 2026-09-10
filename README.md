@@ -1,2 +1,68 @@
-# dreamscape-carehub
-Horse care and stable management system for Dreamscape Ranch
+# Dreamscape CareHub
+
+An internal horse-care and stable-management application for Dreamscape Ranch, a senior horse retirement and care facility.
+
+## Run locally
+
+Use Node.js 22.13+ (Node 24 recommended) and npm.
+
+```bash
+npm ci
+npm run dev
+```
+
+Open http://localhost:3000. No environment variables, Supabase account or credentials are required.
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm start
+```
+
+## Stack
+
+Next.js 16.3.4, App Router, React 19, TypeScript, Tailwind CSS 4, ESLint and Lucide icons. Shared CSS tokens keep the calm green barn interface consistent. No custom backend.
+
+## Prototype functionality
+
+- Today: active horses, four feed/medication progress cards, care checklists, special care and today's vet/farrier visits. Completion and undo record the demo user and current Pacific time.
+- Horses: six fictional residents, search by name/owner/paddock, and a session-only Add Horse form.
+- Horse profile: identity, owner, location, today's care, current instructions, scheduled changes, appointments and recent history.
+- Care: medications, feed/mash, supplements and special instructions, with inclusive effective dates and clearly identified scheduled changes.
+- Calendar: chronological upcoming events, all nine requested event types, filters by horse/type/start date and links to profiles.
+- History: chronological per-horse timeline with category filters.
+- Photos and Documents: honest empty states; uploads are not implemented.
+- Administration: workspace information and prototype limitations.
+- Responsive sidebar/top navigation, keyboard-operable tabs, visible focus and 44px task buttons.
+
+All names, treatment examples and care records are mock data, not veterinary guidance. App state is held in React context, shared across client-side navigation, and resets on refresh. No data is stored remotely. Added horses begin with no care plan. Demo events are dated relative to the initial request's Pacific date. Refresh at the beginning of a new barn day; this prototype does not automatically roll over an open session at midnight.
+
+## Architecture
+
+- `src/app/`: route entry points, root layout and shared styles.
+- `src/components/`: reusable shell, provider, task/event lists, directory, profile, care plan and history.
+- `src/types/`: Horse, Owner, CareItem, Medication, FeedInstruction, Supplement, CalendarEvent, CareTask, TaskCompletion and HistoryEntry.
+- `src/lib/data/mock.ts`: fixtures separate from presentation.
+- `src/lib/data/repository.ts`: adapter boundary for replacement with Supabase queries.
+- `src/lib/dates.ts`: Pacific ranch dates, age and effective-date classification.
+- `src/lib/supabase/`: integration notes; no client initialized.
+- `scripts/dev.mjs`: forwards Next.js dev flags and translates managed-preview host/port flags.
+- `tests/`: date/effective-instruction boundary checks.
+
+Existing repository ignore rules are preserved, including environment files, dependencies and build output. No secrets or fake API keys are included. Next.js-generated AGENTS.md/CLAUDE.md are retained because development regenerates them.
+
+## Validation
+
+See `VALIDATION.md` for performed checks and environment limitations. The commands above reproduce lint, TypeScript, unit tests and production build checks.
+
+## Proposed next steps
+
+1. Review on the ranch iPad with the people doing AM/PM rounds; confirm terminology, feed quantities and task grouping.
+2. Refine horse entry and care-plan editing, including overlapping-date validation and veterinary approvals.
+3. Introduce Supabase migrations, authentication and ranch-scoped row-level access; replace the data adapter and add loading/error/offline handling.
+4. Persist unique daily tasks and audit completions/undo across multiple devices.
+5. Add photo/document storage after the care workflow is agreed.
+
+Owner accounts, payments, accounting integrations and production authentication are outside this prototype.
