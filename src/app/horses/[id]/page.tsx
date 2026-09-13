@@ -1,16 +1,11 @@
 import { Suspense } from "react";
 import { ProfileRoute } from "@/components/profile-route";
+import { HORSE_IDS } from "@/lib/data/roster";
+
 export function generateStaticParams() {
-  return [
-    "molly",
-    "charlie",
-    "buddy",
-    "daisy",
-    "jasper",
-    "rosie",
-    "session",
-  ].map((id) => ({ id }));
+  return [...HORSE_IDS, "session"].map((id) => ({ id }));
 }
+
 export default async function Page({
   params,
 }: {

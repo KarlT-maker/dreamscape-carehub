@@ -1,7 +1,21 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sun, Fence, CalendarDays, Settings, Sprout } from "lucide-react";
+import {
+  Sun,
+  Fence,
+  CalendarDays,
+  Settings,
+  Sprout,
+  Wheat,
+  Pill,
+  Users,
+} from "lucide-react";
+const boardLinks = [
+  { href: "/boards/mash", label: "Mash & feed", icon: Wheat },
+  { href: "/boards/medication", label: "Medications", icon: Pill },
+  { href: "/boards/crew", label: "Who's on what", icon: Users },
+];
 const links = [
   { href: "/", label: "Today", icon: Sun },
   { href: "/horses", label: "Horses", icon: Fence },
@@ -19,6 +33,19 @@ export function Shell({ children }: { children: React.ReactNode }) {
             Dreamscape<strong>CareHub</strong>
           </span>
         </Link>
+        <div className="nav-label">FEED ROOM BOARDS</div>
+        <nav aria-label="Feed room boards">
+          {boardLinks.map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              aria-current={path.startsWith(href) ? "page" : undefined}
+            >
+              <Icon size={21} />
+              <span>{label}</span>
+            </Link>
+          ))}
+        </nav>
         <div className="nav-label">BARN MANAGEMENT</div>
         <nav aria-label="Primary">
           {links.map(({ href, label, icon: Icon }) => (

@@ -73,6 +73,24 @@ export interface CalendarEvent {
   reason: string;
   notes: string;
 }
+export interface Helper {
+  id: string;
+  name: string;
+  initials: string;
+}
+export interface ShiftAssignment {
+  id: string;
+  date: string;
+  period: "AM" | "PM";
+  paddock: string;
+  helperId: string;
+}
+export interface DayOff {
+  id: string;
+  helperId: string;
+  date: string;
+  note?: string;
+}
 export interface HistoryEntry {
   id: string;
   horseId: string;
