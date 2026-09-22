@@ -13,7 +13,7 @@ export function BarnSession({ children }: { children: React.ReactNode }) {
   if (!mounted)
     return (
       <div className="empty" role="status">
-        Opening Dreamscape CareHub…
+        Opening BarnCareHub…
       </div>
     );
   return <BarnProvider today={ranchDate()}>{children}</BarnProvider>;

@@ -1,4 +1,4 @@
-# Dreamscape CareHub
+# BarnCareHub
 
 An internal horse-care and stable-management application for Dreamscape Ranch, a senior horse retirement and care facility.
 

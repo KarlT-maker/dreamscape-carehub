@@ -10,8 +10,10 @@ import {
   Wheat,
   Pill,
   Users,
+  LayoutGrid,
 } from "lucide-react";
 const boardLinks = [
+  { href: "/boards/full", label: "Full board", icon: LayoutGrid },
   { href: "/boards/mash", label: "Mash & feed", icon: Wheat },
   { href: "/boards/medication", label: "Medications", icon: Pill },
   { href: "/boards/crew", label: "Who's on what", icon: Users },
@@ -30,7 +32,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <Link href="/" className="brand">
           <Sprout size={32} />
           <span>
-            Dreamscape<strong>CareHub</strong>
+            Barn<strong>CareHub</strong>
           </span>
         </Link>
         <div className="nav-label">FEED ROOM BOARDS</div>

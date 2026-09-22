@@ -3,7 +3,7 @@ import "./globals.css";
 import { BarnSession } from "@/components/barn-session";
 import { Shell } from "@/components/shell";
 export const metadata: Metadata = {
-  title: "Dreamscape CareHub",
+  title: "BarnCareHub",
   description: "Daily horse care at Dreamscape Ranch",
 };
 export default function RootLayout({
