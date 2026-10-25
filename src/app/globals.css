@@ -100,6 +100,7 @@ p {
   flex-direction: column;
 }
 .brand {
+  flex-shrink: 0;
   display: flex;
   gap: 14px;
   align-items: center;
@@ -112,6 +113,12 @@ p {
   font-family: Georgia, serif;
   font-size: 27px;
   font-weight: 400;
+}
+.sidebar-navigation {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-bottom: 18px;
 }
 .nav-label {
   font-size: 11px;
@@ -143,6 +150,7 @@ p {
 }
 .sidebar-foot {
   margin-top: auto;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -152,6 +160,37 @@ p {
   display: block;
   color: #acc2b7;
   font-size: 11px;
+}
+.sidebar-user {
+  min-width: 0;
+}
+.sidebar-identity {
+  overflow-wrap: anywhere;
+}
+.sidebar-sign-out {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #acc2b7;
+  border-radius: 6px;
+  background: #31564b;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sidebar-sign-out:hover {
+  background: #426b5e;
+}
+.sidebar-sign-out:focus-visible {
+  outline-color: #fff;
+}
+.sidebar-sign-out:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 .avatar {
   background: #36594e;
@@ -891,7 +930,8 @@ select {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 24px;
+    gap: 10px;
+    flex-wrap: wrap;
   }
   .brand {
     padding: 0;
@@ -904,13 +944,33 @@ select {
   .brand svg {
     width: 24px;
   }
-  .nav-label,
-  .sidebar-foot {
+  .nav-label {
     display: none;
+  }
+  .sidebar-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    flex: 1 1 100%;
+    order: 1;
+    overflow: visible;
+    margin: 0;
+  }
+  .sidebar-foot {
+    margin: 0 0 0 auto;
+  }
+  .sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .sidebar-sign-out {
+    margin-top: 0;
   }
   .sidebar nav {
     display: flex;
-    margin-left: auto;
+    flex: 1 1 auto;
+    margin: 0;
+    justify-content: space-between;
     gap: 4px;
   }
   .sidebar nav a {
@@ -947,6 +1007,13 @@ select {
   .brand {
     display: none;
   }
+  .sidebar-navigation {
+    display: block;
+  }
+  .sidebar-foot {
+    margin: 0 0 10px;
+    justify-content: flex-end;
+  }
   .sidebar nav {
     justify-content: space-between;
   }
@@ -955,7 +1022,8 @@ select {
     gap: 4px;
     padding: 7px 10px;
     font-size: 11px;
-    min-width: 64px;
+    min-width: 0;
+    flex: 1;
   }
   .sidebar nav a svg {
     width: 19px;

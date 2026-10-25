@@ -12,6 +12,7 @@ import {
   Pill,
   Users,
   LayoutGrid,
+  LogOut,
 } from "lucide-react";
 const boardLinks = [
   { href: "/boards/full", label: "Full board", icon: LayoutGrid },
@@ -37,41 +38,43 @@ export function Shell({ children }: { children: React.ReactNode }) {
             Barn<strong>CareHub</strong>
           </span>
         </Link>
-        <div className="nav-label">FEED ROOM BOARDS</div>
-        <nav aria-label="Feed room boards">
-          {boardLinks.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              aria-current={path.startsWith(href) ? "page" : undefined}
-            >
-              <Icon size={21} />
-              <span>{label}</span>
-            </Link>
-          ))}
-        </nav>
-        <div className="nav-label">BARN MANAGEMENT</div>
-        <nav aria-label="Primary">
-          {links.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              aria-current={
-                (href === "/" ? path === "/" : path.startsWith(href))
-                  ? "page"
-                  : undefined
-              }
-            >
-              <Icon size={21} />
-              <span>{label}</span>
-            </Link>
-          ))}
-        </nav>
+        <div className="sidebar-navigation">
+          <div className="nav-label">FEED ROOM BOARDS</div>
+          <nav aria-label="Feed room boards">
+            {boardLinks.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                aria-current={path.startsWith(href) ? "page" : undefined}
+              >
+                <Icon size={21} />
+                <span>{label}</span>
+              </Link>
+            ))}
+          </nav>
+          <div className="nav-label">BARN MANAGEMENT</div>
+          <nav aria-label="Primary">
+            {links.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                aria-current={
+                  (href === "/" ? path === "/" : path.startsWith(href))
+                    ? "page"
+                    : undefined
+                }
+              >
+                <Icon size={21} />
+                <span>{label}</span>
+              </Link>
+            ))}
+          </nav>
+        </div>
         <div className="sidebar-foot">
           <span className="avatar">{shared ? userName.slice(0,2).toUpperCase() : "BC"}</span>
-          <div>
-            {userName}<small>{shared ? (isAdmin ? "Barn administrator" : "Barn tester") : "Local practice workspace"}</small>
-            {shared && <button className="text-button" disabled={saving || uncertain} onClick={() => void logout()}>Sign out</button>}
+          <div className="sidebar-user">
+            <div className="sidebar-identity">{userName}<small>{shared ? (isAdmin ? "Barn administrator" : "Barn tester") : "Local practice workspace"}</small></div>
+            {shared && <button className="sidebar-sign-out" disabled={saving || uncertain} onClick={() => void logout()}><LogOut size={16} aria-hidden="true" />Sign out</button>}
           </div>
         </div>
       </aside>
