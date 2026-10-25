@@ -27,7 +27,7 @@ const links = [
 ];
 export function Shell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
-  const { mode, storageError } = useBarn();
+  const { mode, storageError, shared, userName, isAdmin, saving, uncertain, retrySave, logout, savedAt } = useBarn();
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -68,9 +68,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="sidebar-foot">
-          <span className="avatar">KT</span>
+          <span className="avatar">{shared ? userName.slice(0,2).toUpperCase() : "BC"}</span>
           <div>
-            Karl Thorson<small>Barn administrator · demo</small>
+            {userName}<small>{shared ? (isAdmin ? "Barn administrator" : "Barn tester") : "Local practice workspace"}</small>
+            {shared && <button className="text-button" disabled={saving || uncertain} onClick={() => void logout()}>Sign out</button>}
           </div>
         </div>
       </aside>
@@ -79,11 +80,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span>
             Dreamscape Ranch <span className="muted">/ Care & wellbeing</span>
           </span>
-          <span className="badge">{mode === "examples" ? "Example roster" : "Practice workspace"}</span>
+          <span className="badge" role="status">{saving ? "Saving…" : shared ? "Shared beta" : mode === "examples" ? "Example roster" : "Practice workspace"}</span>
         </header>
-        <main id="main">{storageError && <p className="workspace-error" role="alert">{storageError} <Link href="/administration">Backups &amp; reset</Link></p>}{mode === "examples" && <p className="workspace-notice">Example data: care, profile and staff details are invented. <Link href="/administration">Clear examples or undo</Link></p>}{children}</main>
+        <main id="main">{!shared && <p className="workspace-notice">For shared saving, open the <a href="https://dreamscaperanch.com/carehub/">ranch’s online beta</a>. Entries made here stay on this device. Download a backup in Administration before bringing existing records across.</p>}{storageError && <div className="workspace-error" role="alert">{storageError} {uncertain && <button className="button" disabled={saving} onClick={() => void retrySave()}>Check save</button>}</div>}{mode === "examples" && <p className="workspace-notice">Example data: care, profile and staff details are invented. <Link href="/administration">Clear examples or undo</Link></p>}{children}</main>
         <footer>
-          Saved on this device · not shared with other devices · <Link href="/administration">Backups &amp; reset</Link> · Pacific time
+          {shared ? `Shared online${savedAt ? ` · Last saved ${new Date(savedAt).toLocaleTimeString()}` : ""} · Checks for updates every 10 seconds` : "Saved on this device · not shared with other devices"} · <Link href="/administration">Backups &amp; reset</Link> · Pacific time
         </footer>
       </div>
     </div>

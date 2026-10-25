@@ -1,0 +1,4 @@
+Options -Indexes
+<FilesMatch "^(seed\.json|validation\.php)$">
+  Require all denied
+</FilesMatch>

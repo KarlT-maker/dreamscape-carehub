@@ -8,7 +8,7 @@ import { PageHeader, HorsePortrait, Empty } from "./ui";
 import { age } from "@/lib/dates";
 import { HorseForm } from "./horse-form";
 export function HorseDirectory() {
-  const { horses, today } = useBarn();
+  const { horses, today, shared } = useBarn();
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState(false);
   const [message, setMessage] = useState("");
@@ -32,7 +32,7 @@ export function HorseDirectory() {
           </button>
         }
       />
-      {adding && <HorseForm onClose={() => setAdding(false)} onSaved={name => { setAdding(false); setQuery(""); setMessage(name + " added and saved on this device."); }} />}
+      {adding && <HorseForm onClose={() => setAdding(false)} onSaved={name => { setAdding(false); setQuery(""); setMessage(name + (shared ? " added and saved online." : " added and saved on this device.")); }} />}
       <p role="status">{message}</p>
       <div className="directory-toolbar">
         <label className="search">

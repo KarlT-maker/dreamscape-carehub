@@ -27,7 +27,7 @@ export function CareForm({
   horseId,
   horseName,
   kind,
-  existing,
+  existing: initialExisting,
   onClose,
 }: {
   horseId: string;
@@ -36,7 +36,9 @@ export function CareForm({
   existing?: CareInstruction;
   onClose: () => void;
 }) {
-  const { today, addCare, reviseCare } = useBarn();
+  const [existing] = useState(initialExisting);
+  const [newId] = useState(() => crypto.randomUUID());
+  const { today, addCare, reviseCare, saving, uncertain } = useBarn();
   const [draft, setDraft] = useState<CareDraft>({
     kind,
     name: existing?.name ?? "",
@@ -66,10 +68,10 @@ export function CareForm({
   return (
     <form
       className="panel care-form"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         if (!valid) return;
-        const saved = existing ? reviseCare(existing.id, draft) : addCare(horseId, draft);
+        const saved = await (existing ? reviseCare(existing.id, draft, existing) : addCare(horseId, draft, newId));
         if (saved) onClose();
       }}
     >
@@ -179,8 +181,8 @@ export function CareForm({
       )}
 
       <div className="care-form-actions">
-        <button className="button" type="submit" disabled={!valid}>
-          {existing ? "Save change" : "Add it"}
+        <button className="button" type="submit" disabled={!valid || saving || uncertain}>
+          {saving ? "Saving…" : existing ? "Save change" : "Add it"}
         </button>
         <button type="button" className="button secondary" onClick={onClose}>
           Cancel

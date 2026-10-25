@@ -1922,3 +1922,7 @@ body.full-board-mode .fb-grid {
 .backup-input { position: relative; overflow: hidden; }
 .backup-input input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
 .backup-input:focus-within { outline: 3px solid #678655; outline-offset: 3px; }
+
+.login-page { max-width: 620px; margin: 8vh auto; padding: 20px; }
+.login-page .panel { padding: 32px; }
+button:disabled { opacity: .55; cursor: wait; }

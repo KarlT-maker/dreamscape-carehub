@@ -19,7 +19,7 @@ export function HorseProfile({
   initialTab?: string;
   historyFilter?: string;
 }) {
-  const { horses, today, tasks, events, care, history } = useBarn();
+  const { horses, today, tasks, events, care, history, shared } = useBarn();
   const [tab, setTab] = useState(
     tabs.includes(initialTab) ? initialTab : "Overview",
   );
@@ -75,7 +75,7 @@ export function HorseProfile({
         </div>
       </section>
       <div className="workspace-actions"><button className="button secondary" onClick={() => setEditing(true)}>Edit profile</button></div>
-      {editing && <HorseForm horse={horse} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); setMessage("Profile saved on this device."); }} />}
+      {editing && <HorseForm horse={horse} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); setMessage(shared ? "Profile saved online." : "Profile saved on this device."); }} />}
       <p role="status">{message}</p>
       <div className="tabs" role="tablist" aria-label="Horse profile sections">
         {tabs.map((t) => (
