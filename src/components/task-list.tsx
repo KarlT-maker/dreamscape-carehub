@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { horsePath } from "@/lib/horse-path";
 import { Check } from "lucide-react";
 import { useBarn } from "./provider";
 import type { CareTask } from "@/types";
@@ -31,7 +32,7 @@ export function TaskList({ tasks }: { tasks: CareTask[] }) {
               {completion && <Check size={23} />}
             </button>
             <div className="task-content">
-              <Link href={"/horses/" + task.horseId}>
+              <Link href={horsePath(task.horseId)}>
                 {horses.find((h) => h.id === task.horseId)?.name}
               </Link>
               <p>

@@ -8,7 +8,7 @@ export interface Horse {
   name: string;
   registeredName?: string;
   birthDate: string;
-  sex: "Mare" | "Gelding" | "Stallion";
+  sex: "" | "Mare" | "Gelding" | "Stallion";
   breed: string;
   colour: string;
   owner: Owner;

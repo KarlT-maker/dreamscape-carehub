@@ -61,7 +61,7 @@ export function Dashboard() {
           year: "numeric",
         })}
         title="Today at the ranch"
-        description={`${activeHorses} horses across nine paddocks.`}
+        description={`${activeHorses} horses across ${new Set(horses.filter(h => h.status === "Active").map(h => h.location)).size} paddocks.`}
         action={
           <Link className="button secondary" href="/horses">
             View horses <ArrowUpRight size={18} />

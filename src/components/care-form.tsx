@@ -69,9 +69,8 @@ export function CareForm({
       onSubmit={(e) => {
         e.preventDefault();
         if (!valid) return;
-        if (existing) reviseCare(existing.id, draft);
-        else addCare(horseId, draft);
-        onClose();
+        const saved = existing ? reviseCare(existing.id, draft) : addCare(horseId, draft);
+        if (saved) onClose();
       }}
     >
       <div className="panel-heading">

@@ -1914,3 +1914,11 @@ body.full-board-mode .fb-grid {
     grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
   }
 }
+
+.workspace-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; }
+.workspace-notice, .workspace-error, .workspace-confirm { padding: 14px 18px; margin: 16px 0; border-radius: 8px; background: #eef3ed; }
+.workspace-error { background: #fff1ee; color: #842a19; }
+.workspace-confirm { border: 1px solid #b0bba8; }
+.backup-input { position: relative; overflow: hidden; }
+.backup-input input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.backup-input:focus-within { outline: 3px solid #678655; outline-offset: 3px; }

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
+import { paddockNames } from "@/lib/data/workspace";
 import { useBarn } from "./provider";
 import { dateLabel, instructionState, offsetDate } from "@/lib/dates";
 import { horsePath } from "@/lib/horse-path";
@@ -74,7 +75,7 @@ export function FullBoard() {
 
   const weekEnd = offsetDate(today, 7);
   const changes = care
-    .filter((c) => c.kind === "medication")
+    .filter((c) => c.kind === "medication" && (!c.effectiveEnd || c.effectiveEnd >= c.effectiveStart))
     .flatMap((c) => {
       const out: { date: string; text: string; horseId: string }[] = [];
       if (c.effectiveStart > today && c.effectiveStart <= weekEnd)
@@ -106,7 +107,7 @@ export function FullBoard() {
         </div>
         <div className="fb-info">
           <span className="fb-label">Off today</span>
-          {offToday.length ? offToday.join(", ") : "Everyone in"}
+          {!helpers.length ? "No crew entered" : offToday.length ? offToday.join(", ") : "No days off recorded"}
         </div>
         <div className="fb-info fb-changes">
           <span className="fb-label">Med changes this week</span>
@@ -129,8 +130,9 @@ export function FullBoard() {
         </button>
       </header>
 
+      <p className="workspace-notice">{active.length ? "Select a horse’s name to enter its feed, supplements or medications." : <Link href="/horses">Add a horse in the Horses section to begin.</Link>}</p>
       <div className="fb-grid">
-        {PADDOCKS.map((paddock) => {
+        {paddockNames(horses, PADDOCKS).map((paddock) => {
           const inPaddock = active.filter((h) => h.location === paddock);
           if (!inPaddock.length) return null;
           return (
@@ -161,6 +163,7 @@ export function FullBoard() {
                           </Link>
                         </th>
                         <td>
+                          {!mine.length && <Link className="text-link" href={horsePath(horse.id, "Care")}>No care entered · Add feed or care</Link>}
                           {feed.map((c) => {
                             const mark = standingMark(c.instructions);
                             return (

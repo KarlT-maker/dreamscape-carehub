@@ -23,3 +23,9 @@ test('effective dates are inclusive and future instructions stay scheduled', () 
   assert.equal(instructionState(future, '2026-09-19'), 'Scheduled');
   assert.equal(instructionState(future, '2026-09-20'), 'Current');
 });
+
+test('cancelled future instructions never reappear as scheduled or current', () => {
+  const cancelled = { effectiveStart:'2026-11-01', effectiveEnd:'2026-10-31' };
+  assert.equal(instructionState(cancelled,'2026-10-25'),'Ended');
+  assert.equal(instructionState(cancelled,'2026-11-01'),'Ended');
+});

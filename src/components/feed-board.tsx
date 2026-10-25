@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { paddockNames } from "@/lib/data/workspace";
 import { useBarn } from "./provider";
 import { instructionState } from "@/lib/dates";
 import { horsePath } from "@/lib/horse-path";
@@ -59,9 +60,9 @@ export function FeedBoard() {
           );
 
         if (!visible.length)
-          return <Empty>Nothing matches that search.</Empty>;
+          return <Empty>{rows.length ? "Nothing matches that search." : <>No feed entered yet. Open a horse under <Link href="/horses">Horses</Link>, then choose Care and Add feed.</>}</Empty>;
 
-        return PADDOCKS.map((paddock) => {
+        return paddockNames(horses, PADDOCKS).map((paddock) => {
           const inPaddock = visible.filter((r) => r.horse.location === paddock);
           if (!inPaddock.length) return null;
           return (

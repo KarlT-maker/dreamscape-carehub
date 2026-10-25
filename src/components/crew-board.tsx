@@ -1,7 +1,9 @@
 "use client";
+import { paddockNames } from "@/lib/data/workspace";
 import { useBarn } from "./provider";
 import { dateLabel, offsetDate } from "@/lib/dates";
 import { PADDOCKS } from "@/lib/data/roster";
+import { Empty } from "./ui";
 import { BoardFrame } from "./board-frame";
 
 /**
@@ -39,8 +41,9 @@ export function CrewBoard() {
       showPeriod={false}
     >
       {({ search }) => {
+        if (!helpers.length) return <Empty>No crew or shifts entered. Crew scheduling will be added in a later stage.</Empty>;
         const term = search.trim().toLowerCase();
-        const visible = PADDOCKS.filter((p) => {
+        const visible = paddockNames(horses, PADDOCKS).filter((p) => {
           if (!term) return true;
           if (p.toLowerCase().includes(term)) return true;
           return (["AM", "PM"] as const).some((period) => {

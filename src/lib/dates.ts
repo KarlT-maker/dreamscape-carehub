@@ -35,6 +35,7 @@ export function instructionState(
   item: { effectiveStart: string; effectiveEnd?: string },
   date: string,
 ) {
+  if (item.effectiveEnd && item.effectiveEnd < item.effectiveStart) return "Ended";
   return item.effectiveStart > date
     ? "Scheduled"
     : item.effectiveEnd && item.effectiveEnd < date

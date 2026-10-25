@@ -5,6 +5,7 @@ import { useBarn } from "./provider";
 import { HorsePortrait, Empty } from "./ui";
 import { TaskList } from "./task-list";
 import { EventList } from "./event-list";
+import { HorseForm } from "./horse-form";
 import { CarePlan } from "./care-plan";
 import { History } from "./history";
 import { age, dateLabel, instructionState } from "@/lib/dates";
@@ -22,6 +23,8 @@ export function HorseProfile({
   const [tab, setTab] = useState(
     tabs.includes(initialTab) ? initialTab : "Overview",
   );
+  const [editing, setEditing] = useState(false);
+  const [message, setMessage] = useState("");
   const horse = horses.find((h) => h.id === id);
   if (!horse)
     return (
@@ -49,13 +52,12 @@ export function HorseProfile({
             {horse.registeredName || "Registered name not recorded"}
           </p>
           <p>
-            {age(horse.birthDate, today)} years · {horse.sex} · {horse.breed} ·{" "}
-            {horse.colour}
+            {horse.birthDate ? `${age(horse.birthDate, today)} years` : "Age not entered"} · {horse.sex || "Sex not entered"} · {horse.breed || "Breed not entered"} · {horse.colour || "Colour not entered"}
           </p>
           <dl className="profile-facts">
             <div>
               <dt>Owner</dt>
-              <dd>{horse.owner.name}</dd>
+              <dd>{horse.owner.name || "Not entered"}</dd>
             </div>
             <div>
               <dt>Paddock</dt>
@@ -63,15 +65,18 @@ export function HorseProfile({
             </div>
             <div>
               <dt>Born</dt>
-              <dd>{dateLabel(horse.birthDate)}</dd>
+              <dd>{horse.birthDate ? dateLabel(horse.birthDate) : "Not entered"}</dd>
             </div>
             <div>
               <dt>Arrived</dt>
-              <dd>{dateLabel(horse.arrivalDate)}</dd>
+              <dd>{horse.arrivalDate ? dateLabel(horse.arrivalDate) : "Not entered"}</dd>
             </div>
           </dl>
         </div>
       </section>
+      <div className="workspace-actions"><button className="button secondary" onClick={() => setEditing(true)}>Edit profile</button></div>
+      {editing && <HorseForm horse={horse} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); setMessage("Profile saved on this device."); }} />}
+      <p role="status">{message}</p>
       <div className="tabs" role="tablist" aria-label="Horse profile sections">
         {tabs.map((t) => (
           <button
