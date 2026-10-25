@@ -5,7 +5,7 @@ import { useBarn } from "@/components/provider";
 import { validateSnapshot } from "@/lib/data/workspace";
 
 export default function Page() {
-  const { resetWorkspace, undoReset, canUndoReset, exportBackup, restoreBackup, savedAt, today, shared, isAdmin, saving, uncertain } = useBarn();
+  const { resetWorkspace, undoReset, canUndoReset, exportBackup, restoreBackup, savedAt, today, shared, isAdmin, canManageAccounts, saving, uncertain } = useBarn();
   const [pending, setPending] = useState<"blank" | "roster" | "examples" | "restore" | null>(null);
   const [backup, setBackup] = useState("");
   const [message, setMessage] = useState("");
@@ -30,7 +30,7 @@ export default function Page() {
         catch { setError("That file is not a valid BarnCareHub backup. Your current records have not changed."); }
       }} /></label>}</div>
     </div></section>
-    {shared && isAdmin && <section className="panel"><div className="panel-heading"><h2>Staff access</h2></div><p className="padded">Create each helper’s own account in your website’s Users area and choose the <strong>BarnCareHub tester</strong> role. Testers can edit horses and care and use the checklists. Only administrators can reset or restore all records. <a href="/wp-admin/user-new.php" target="_blank" rel="noreferrer">Open website Users</a>.</p></section>}
+    {shared && isAdmin && <section className="panel"><div className="panel-heading"><h2>Staff access</h2></div><p className="padded">Each person uses their own account. <strong>BarnCareHub testers</strong> can edit horses and care and use the checklists. <strong>BarnCareHub administrators</strong> can also reset or restore shared records. These roles do not give control of the public website. {canManageAccounts ? <a href="/wp-admin/user-new.php" target="_blank" rel="noreferrer">Open website Users to manage accounts</a> : "Adding or changing accounts currently requires the separate website administrator login."}</p></section>}
     {isAdmin && <section className="panel"><div className="panel-heading"><h2>{shared ? "Clear or restore shared records" : "Clear or restore the practice workspace"}</h2></div><div className="padded">
       <p>Keep horse names and paddocks while clearing other profile details, care plans, appointments, history, crew and checkmarks. The previous workspace is kept so you can undo the last reset or restore.</p>
       <div className="workspace-actions">

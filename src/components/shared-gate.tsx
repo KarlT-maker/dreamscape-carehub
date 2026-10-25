@@ -15,12 +15,13 @@ export function SharedGate({children, today}: {children: React.ReactNode; today:
       .finally(() => setBusy(false));
   }
   useEffect(() => { void open(); }, []);
-  if (session?.user && workspace) return <BarnProvider today={today} remote={{session, workspace}}>{children}</BarnProvider>;
+  const ownerSetup = session?.user?.canManageAccounts && !session.ownerAccountsReady;
+  if (session?.user && workspace && !ownerSetup) return <BarnProvider today={today} remote={{session, workspace}}>{children}</BarnProvider>;
   return <main className="login-page"><section className="panel padded">
     <p className="eyebrow">DREAMSCAPE RANCH</p><h1>BarnCareHub</h1>
     {busy ? <p role="status">Opening your shared barn…</p> : session?.user ? <>
-      <h2>Open the shared beta</h2><p>The 43 horse names and paddocks are ready. Care and profile details start empty. Existing browser backups can be imported in Administration.</p>
-      {session.user.admin ? <button className="button" onClick={async () => { setBusy(true); setError(""); try { setWorkspace(await sharedRequest("initialize", session.nonce, {})); } catch { setError("Setup could not finish. Please try again."); } finally { setBusy(false); } }}>Open shared barn</button> : <p>Your barn administrator needs to finish the first setup.</p>}
+      <h2>{session.ready ? "Enable personal administrator accounts" : "Open the shared beta"}</h2><p>{session.ready ? "Add a CareHub administrator role for people who manage barn records. This keeps the existing records and does not give these accounts control of your public website. No people are added and no emails are sent by this step." : "The 43 horse names and paddocks are ready. Care and profile details start empty. Existing browser backups can be imported in Administration."}</p>
+      {session.user.canManageAccounts ? <button className="button" onClick={async () => { setBusy(true); setError(""); try { setWorkspace(await sharedRequest("initialize", session.nonce, {})); setSession({...session, ownerAccountsReady:true}); } catch { setError("Setup could not finish. Please try again."); } finally { setBusy(false); } }}>{session.ready ? "Enable administrator accounts" : "Open shared barn"}</button> : <p>Your website administrator needs to finish the first setup.</p>}
     </> : session ? <>
       <h2>Sign in to your barn</h2><p>Use your own approved account. Saved changes are shared with the rest of the team.</p>
       <a className="button" href={session.loginUrl}>Sign in</a><p className="muted">Ask Karl or Lea for a BarnCareHub tester account. Your ordinary website visitor account does not grant access.</p>

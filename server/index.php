@@ -10,11 +10,12 @@ header('Cache-Control: private, no-store, max-age=0');
 header('X-Content-Type-Options: nosniff');
 header('X-Robots-Tag: noindex, nofollow');
 function bh_reply(array $value, int $status = 200): never { http_response_code($status); echo wp_json_encode($value); exit; }
+function bh_admin(): bool { return current_user_can('manage_options') || current_user_can('barncarehub_admin'); }
 function bh_user(): array {
     $u = wp_get_current_user();
-    return ['name'=>$u->display_name, 'admin'=>current_user_can('manage_options')];
+    return ['name'=>$u->display_name, 'admin'=>bh_admin(), 'canManageAccounts'=>current_user_can('create_users')];
 }
-function bh_allowed(): bool { return current_user_can('manage_options') || current_user_can('barncarehub_edit'); }
+function bh_allowed(): bool { return bh_admin() || current_user_can('barncarehub_edit'); }
 global $wpdb;
 $wpdb->suppress_errors(true);
 $table = $wpdb->prefix . 'barncarehub_workspace';
@@ -25,7 +26,7 @@ $ready = (bool)get_option('barncarehub_installed_v1', false);
 $login = wp_login_url(home_url('/carehub/'));
 if (!in_array($method, ['GET','POST'], true)) bh_reply(['error'=>'Method not allowed.'], 405);
 if ($method === 'GET' && $action === 'session') {
-    bh_reply(['user'=>bh_allowed() ? bh_user() : null, 'nonce'=>bh_allowed() ? wp_create_nonce('barncarehub') : null, 'ready'=>$ready, 'loginUrl'=>$login]);
+    bh_reply(['user'=>bh_allowed() ? bh_user() : null, 'nonce'=>bh_allowed() ? wp_create_nonce('barncarehub') : null, 'ready'=>$ready, 'ownerAccountsReady'=>get_role('barncarehub_admin') !== null, 'loginUrl'=>$login]);
 }
 if (!bh_allowed()) bh_reply(['error'=>'Please sign in with a BarnCareHub account.', 'loginUrl'=>$login], 401);
 if ($method === 'POST') {
@@ -52,9 +53,13 @@ try {
             $seed = bh_decode(file_get_contents(__DIR__.'/seed.json'));
             $seed['revision'] = 1; $seed['savedAt'] = gmdate('c');
             bh_db_ok($wpdb->query($wpdb->prepare("INSERT IGNORE INTO `$table` (id,snapshot) VALUES (1,%s)", wp_json_encode($seed))));
-            add_role('barncarehub_tester', 'BarnCareHub tester', ['read'=>true, 'barncarehub_edit'=>true]);
             update_option('barncarehub_installed_v1', 1, false);
         }
+        // Register app-only roles without assigning them to any existing person.
+        // Re-running setup never resets the saved barn records.
+        add_role('barncarehub_tester', 'BarnCareHub tester', ['read'=>true, 'barncarehub_edit'=>true]);
+        add_role('barncarehub_admin', 'BarnCareHub administrator', ['read'=>true, 'barncarehub_edit'=>true, 'barncarehub_admin'=>true]);
+        if (get_role('barncarehub_admin') === null) throw new RuntimeException('The administrator role could not be registered.');
         bh_reply(bh_public(bh_current($table)));
     }
     if (!$ready) bh_reply(['error'=>'The shared beta needs its first administrator setup.'], 503);
@@ -66,7 +71,7 @@ try {
     $body = json_decode($raw, true, 64, JSON_THROW_ON_ERROR);
     bh_require(is_array($body) && is_int($body['revision'] ?? null));
     bh_require(is_string($body['requestId'] ?? null) && preg_match('/^[a-zA-Z0-9-]{20,80}$/D', $body['requestId']) === 1);
-    $admin = current_user_can('manage_options');
+    $admin = bh_admin();
     if ($action !== 'save' && !$admin) bh_reply(['error'=>'Only the barn administrator can replace the shared records.'], 403);
     $hash = hash('sha256', $action . $raw);
     bh_db_ok($wpdb->query('START TRANSACTION'));

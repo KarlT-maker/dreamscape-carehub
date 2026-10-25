@@ -47,6 +47,13 @@ try {
   r=await call('save',{role:'tester',body:{revision:2,requestId:crypto.randomUUID(),snapshot:next}});check(r.status===200 && r.value.snapshot.completions.task.completedBy==='Test helper','checkmarks use the authenticated helper identity');
   r=await call('replace',{body:{revision:3,requestId:crypto.randomUUID(),snapshot:original}});check(r.status===200 && r.value.canUndoReset,'administrator replacement keeps an undo copy');
   r=await call('undo',{body:{revision:4,requestId:crypto.randomUUID()}});check(r.status===200 && r.value.snapshot.completions.task.completedBy==='Test helper','administrator undo restores prior shared records');
+  r=await call('session',{role:'owner'});check(r.value.user.admin && !r.value.user.canManageAccounts && r.value.ownerAccountsReady,'CareHub owners have barn administration without website account permissions');
+  r=await call('workspace',{role:'owner'});check(r.status===200 && r.value.snapshot.revision===5,'CareHub owners can read the shared records');
+  r=await call('replace',{role:'owner',body:{revision:5,requestId:crypto.randomUUID(),snapshot:original}});check(r.status===200 && r.value.snapshot.revision===6,'CareHub owners can restore the barn without website administrator privileges');
+  r=await call('undo',{role:'tester',body:{revision:6,requestId:crypto.randomUUID()}});check(r.status===403,'testers cannot undo an administrator restore');
+  r=await call('undo',{role:'owner',body:{revision:6,requestId:crypto.randomUUID()}});check(r.status===200 && r.value.snapshot.revision===7,'CareHub owners can undo a restore');
+  r=await call('initialize',{role:'owner',body:{}});check(r.status===403,'CareHub owners cannot change the website role or database setup');
+  r=await call('initialize',{body:{}});check(r.status===200 && r.value.snapshot.revision===7 && r.value.snapshot.completions.task.completedBy==='Test helper','enabling owner roles again preserves all saved barn records');
   console.log(`${checks} HTTP integration checks passed against the PHP API with a local WordPress/SQLite fixture.`);
 }catch(e){console.error(logs.slice(-5000));throw e;}
 finally{server.kill();}

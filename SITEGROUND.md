@@ -10,9 +10,15 @@ The API loads the existing `wp-load.php` two directories above it. No database
 passwords or administrator credentials belong in source code or frontend assets.
 WordPress administrators can sign in and select **Open shared barn** once.
 That explicit POST creates two dedicated InnoDB tables, seeds the 43 horse
-names/paddocks, and registers the **BarnCareHub tester** role. It does not grant
-that role to any existing user. The owner then creates individual staff accounts
-using WordPress Users, selecting that role (not Editor or Administrator).
+names/paddocks, and registers the **BarnCareHub tester** and **BarnCareHub
+administrator** roles. It does not assign these roles to anyone. On an existing
+installation, the setup button only registers the missing roles; saved records
+are preserved. Website administrators create individual accounts using WordPress
+Users. Select the CareHub administrator role for barn owners and tester for staff.
+Both roles lack website administration, content editing and user-management
+capabilities. CareHub administrators can reset, restore and undo barn records.
+Account creation currently still requires the separate website administrator
+login. Email notifications and password entry are controlled by the human user.
 
 Authentication uses existing WordPress sign-in/cookies. Every API read requires
 the custom capability or administrator capability except the public session

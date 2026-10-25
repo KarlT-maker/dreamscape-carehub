@@ -1,6 +1,6 @@
 import { validateSnapshot, type Snapshot } from "./data/workspace";
 export const SHARED_API = process.env.NEXT_PUBLIC_BARN_SHARED_API ?? "";
-export type SharedSession = { user: { name: string; admin: boolean } | null; nonce: string; ready: boolean; loginUrl: string };
+export type SharedSession = { user: { name: string; admin: boolean; canManageAccounts?: boolean } | null; nonce: string; ready: boolean; ownerAccountsReady?: boolean; loginUrl: string };
 export type SharedWorkspace = { snapshot: Snapshot; canUndoReset: boolean };
 export class SharedError extends Error {
   constructor(message: string, public status: number, public workspace?: SharedWorkspace) { super(message); }

@@ -37,9 +37,10 @@ function wp_json_encode($v) {return json_encode($v, JSON_THROW_ON_ERROR);}
 function get_option($name,$default=false) {global $wpdb; $q=$wpdb->db->prepare('SELECT value FROM options WHERE name=?');$q->execute([$name]);return $q->fetchColumn() ?: $default;}
 function update_option($name,$value,$autoload=false) {global $wpdb; $q=$wpdb->db->prepare('INSERT OR REPLACE INTO options VALUES (?,?)');$q->execute([$name,$value]);}
 function add_role($name,$label,$caps) {update_option($name,json_encode($caps));}
-function current_user_can($cap) { $role=$_SERVER['HTTP_X_TEST_ROLE'] ?? 'none'; return $role==='admin' || ($role==='tester' && $cap==='barncarehub_edit'); }
+function get_role($name) { $caps=get_option($name); return $caps ? (object)['capabilities'=>json_decode($caps,true)] : null; }
+function current_user_can($cap) { $role=$_SERVER['HTTP_X_TEST_ROLE'] ?? 'none'; if($role==='admin')return true; $caps=get_role($role==='owner' ? 'barncarehub_admin' : 'barncarehub_tester')?->capabilities ?? ['barncarehub_edit'=>true]; return in_array($role,['owner','tester'],true) && !empty($caps[$cap]); }
 function wp_get_current_user() { return (object)['display_name'=>($_SERVER['HTTP_X_TEST_ROLE'] ?? '')==='tester' ? 'Test helper' : 'Test owner']; }
-function get_current_user_id() {return ($_SERVER['HTTP_X_TEST_ROLE'] ?? '')==='tester' ? 2 : 1;}
+function get_current_user_id() {return match($_SERVER['HTTP_X_TEST_ROLE'] ?? '') {'tester'=>2, 'owner'=>3, default=>1};}
 function wp_create_nonce($action) {return 'test-only-nonce';}
 function wp_verify_nonce($v,$action) {return $v==='test-only-nonce';}
 function wp_login_url($redirect) {return '/local-test-login';}

@@ -38,6 +38,7 @@ type Context = Data & {
   shared: boolean;
   userName: string;
   isAdmin: boolean;
+  canManageAccounts: boolean;
   saving: boolean;
   uncertain: boolean;
   retrySave: () => Promise<boolean>;
@@ -255,6 +256,7 @@ export function BarnProvider({
         shared: !!remote,
         userName: remote?.session.user?.name ?? "This device",
         isAdmin: remote ? !!remote.session.user?.admin : true,
+        canManageAccounts: !!remote?.session.user?.canManageAccounts,
         saving, uncertain, retrySave: sendPending,
         logout: async () => { if (remote && !busy.current && !pending.current) { try { await sharedRequest("logout", remote.session.nonce, {}); window.location.reload(); } catch { setStorageError("Sign-out could not be confirmed. Check your connection and try again."); } } },
       }}
