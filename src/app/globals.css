@@ -2155,3 +2155,17 @@ button:disabled { opacity: .55; cursor: wait; }
 .record-extra { margin: 16px 0; }
 .record-extra summary { cursor: pointer; font-weight: 650; margin-bottom: 12px; }
 .farrier-visit-table .farrier-planned-count, .farrier-visit-table .farrier-completed-count { display: block; width: fit-content; margin-bottom: 6px; }
+.farrier-month-picker .farrier-controls { margin-bottom: 16px; }
+.farrier-month-picker .farrier-controls p { margin: 0; align-self: center; }
+.farrier-month-tabs { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 6px; }
+.farrier-month-tabs button, .farrier-week-tabs button { border: 1px solid #cdd8d0; border-radius: 7px; background: white; color: #284c41; padding: 10px 8px; cursor: pointer; }
+.farrier-month-tabs button { font-size: 13px; }
+.farrier-month-tabs button[aria-pressed="true"], .farrier-week-tabs button[aria-pressed="true"] { background: #193f35; border-color: #193f35; color: white; }
+.farrier-month-picker h2 { font-size: 18px; margin: 18px 0 10px; }
+.farrier-week-tabs { display: grid; grid-template-columns: repeat(auto-fit,minmax(130px,1fr)); gap: 8px; }
+.farrier-week-tabs button { display: grid; justify-items: start; gap: 5px; text-align: left; }
+.farrier-week-tabs span { font-size: 12px; }
+.farrier-week-tabs small { font-size: 11px; font-weight: 700; }
+.farrier-month-hint { font-size: 12px; margin: 12px 0 0; }
+.farrier-month-picker:disabled button { cursor: default; opacity: .6; }
+@media (max-width:600px) { .farrier-month-tabs { grid-template-columns: repeat(3,minmax(0,1fr)); } }

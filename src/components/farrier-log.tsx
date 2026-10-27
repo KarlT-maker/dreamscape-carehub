@@ -3,11 +3,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { Printer, Plus } from "lucide-react";
 import { useBarn } from "./provider";
-import { dateLabel, farrierDateLabel, isoWeek, isoWeekStart, isoWeeksInYear, offsetDate } from "@/lib/dates";
+import { dateLabel, farrierDateLabel, isoWeek } from "@/lib/dates";
 import { farrierTotals, farrierWeekRecords } from "@/lib/farrier";
 import { horsePath } from "@/lib/horse-path";
 import { Empty, PageHeader } from "./ui";
 import { FarrierForm } from "./farrier-form";
+import { FarrierMonthNavigator } from "./farrier-week-fields";
 import { FarrierPlans } from "./farrier-plans";
 import { FarrierRecordActions } from "./farrier-record-actions";
 import type { HistoryEntry } from "@/types";
@@ -31,23 +32,13 @@ function FarrierRecords() {
   const records=farrierWeekRecords(history,week.start,week.end,provider).filter(record=>!record.voided);
   const deleted=history.filter(record=>record.type==="Farrier"&&record.voided).sort((a,b)=>b.date.localeCompare(a.date));
   const totals=farrierTotals(records);
-  const firstYear=Math.min(2000,week.year,...history.map(h=>Number(h.date.slice(0,4))));
-  const lastYear=Math.max(Number(today.slice(0,4))+10,week.year);
   const providers=[...new Set(["Shelly",...history.filter(h=>h.type==="Farrier"&&h.provider?.trim()).map(h=>h.provider!.trim())])].sort((a,b)=>a.localeCompare(b));
   const horseName=(id:string)=>horses.find(h=>h.id===id)?.name??"Unknown horse";
   function add() {setEntryDate(today>=week.start&&today<=week.end?today:week.start>today?today:week.start);setEntryProvider(provider||"Shelly");setFormKey(k=>k+1);setEditing("new");setMessage("");}
   return <div className="farrier-page">
     <PageHeader eyebrow="FARRIER RECORDS" title="Record work" description="Enter what Shelly did and review saved work by week. To propose work for a future visit, open Weekly schedule." action={<div className="workspace-actions no-print"><button className="button" disabled={saving||uncertain||!!editing} onClick={add}><Plus size={18}/>Add work record</button><button className="button secondary" disabled={!!editing} onClick={()=>window.print()}><Printer size={18}/>Print week</button></div>}/>
     <section className="panel farrier-week-picker no-print" aria-label="Choose billing week">
-      <div className="farrier-controls">
-        <button className="button secondary" disabled={!!editing} aria-label="Previous billing week" onClick={()=>setDate(offsetDate(week.start,-7))}>← Previous</button>
-        <label>Year<select value={week.year} disabled={!!editing} onChange={e=>{const y=Number(e.target.value);setDate(isoWeekStart(y,Math.min(week.week,isoWeeksInYear(y))));}}>{Array.from({length:lastYear-firstYear+1},(_,i)=>firstYear+i).map(y=><option key={y}>{y}</option>)}</select></label>
-        <label>Week<select value={week.week} disabled={!!editing} onChange={e=>setDate(isoWeekStart(week.year,Number(e.target.value)))}>{Array.from({length:isoWeeksInYear(week.year)},(_,i)=><option key={i+1} value={i+1}>Week {i+1}</option>)}</select></label>
-        <button className="button secondary" disabled={!!editing} aria-label="Next billing week" onClick={()=>setDate(offsetDate(week.start,7))}>Next →</button>
-        <button className="button secondary" disabled={!!editing} onClick={()=>setDate(today)}>This week</button>
-        <label>Farrier<select value={provider} disabled={!!editing} onChange={e=>setProvider(e.target.value)}><option value="">All farriers</option>{providers.map(p=><option key={p}>{p}</option>)}</select></label>
-      </div>
-      <p className="muted">Monday–Sunday calendar weeks. Choose the year and week number shown on the bill.</p>
+      <FarrierMonthNavigator date={date} onChange={setDate} disabled={!!editing}><label>Farrier<select value={provider} onChange={e=>setProvider(e.target.value)}><option value="">All farriers</option>{providers.map(p=><option key={p}>{p}</option>)}</select></label></FarrierMonthNavigator>
     </section>
     {message&&<p className="workspace-notice no-print" role="status">{message}</p>}
     {editing&&<FarrierForm key={formKey+":"+(editing==="new"?"new":editing.id)} existing={editing==="new"?undefined:editing} initialDate={entryDate} initialProvider={entryProvider} allowAnother onClose={()=>setEditing(null)} onSaved={(record,another)=>{setDate(record.date);setProvider("");setMessage(record.voided?`${horseName(record.horseId)} — record deleted. You can restore it under Deleted records.`:`${horseName(record.horseId)} — ${record.farrierWork} saved for week ${isoWeek(record.date).week}.`);if(another){setEntryDate(record.date);setEntryProvider(record.provider??"Shelly");setFormKey(k=>k+1);setEditing("new");}else setEditing(null);}}/>}

@@ -2,12 +2,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Plus, Printer } from "lucide-react";
 import { useBarn } from "./provider";
-import { dateLabel, farrierDateLabel, isoWeek, offsetDate } from "@/lib/dates";
+import { dateLabel, farrierDateLabel, isoWeek } from "@/lib/dates";
 import { farrierWeekRows } from "@/lib/farrier";
 import { Empty, PageHeader } from "./ui";
 import { FarrierPlanForm } from "./farrier-plan-form";
 import { FarrierForm } from "./farrier-form";
-import { FarrierWeekFields } from "./farrier-week-fields";
+import { FarrierMonthNavigator } from "./farrier-week-fields";
 import type { CalendarEvent, HistoryEntry } from "@/types";
 
 export function FarrierPlans() {
@@ -28,7 +28,7 @@ export function FarrierPlans() {
   const cancelled=events.filter(e=>e.type==="Farrier"&&e.cancelled&&e.date>=week.start&&e.date<=week.end&&(!provider||e.provider===provider));
   return <>
     <PageHeader eyebrow="FARRIER RECORDS" title="Weekly schedule" description="Plan the next trim or shoeing by week, just like the paper sheet. An exact day is optional." action={<div className="workspace-actions no-print"><button className="button" disabled={busy} onClick={()=>{setEditing("new");setFormKey(k=>k+1);setMessage("");}}><Plus size={18}/>Plan work</button><button className="button secondary" disabled={busy} onClick={()=>window.print()}><Printer size={18}/>Print week for Shelly</button></div>}/>
-    <section className="panel padded no-print" aria-label="Choose planned week"><fieldset disabled={busy}><div className="farrier-controls"><FarrierWeekFields date={date} onChange={setDate} showRange={false}/><label>Farrier<select value={provider} onChange={e=>setProvider(e.target.value)}><option value="">All farriers</option>{providers.map(p=><option key={p}>{p}</option>)}</select></label><button className="button secondary" aria-label="Previous planned week" onClick={()=>setDate(offsetDate(week.start,-7))}>← Previous week</button><button className="button secondary" onClick={()=>setDate(today)}>This week</button><button className="button secondary" aria-label="Next planned week" onClick={()=>setDate(offsetDate(week.start,7))}>Next week →</button></div><p className="muted">Week {week.week} · {dateLabel(week.start)} – {dateLabel(week.end)}</p></fieldset></section>
+    <section className="panel padded no-print" aria-label="Choose planned week"><FarrierMonthNavigator date={date} onChange={setDate} disabled={busy}><label>Farrier<select value={provider} onChange={e=>setProvider(e.target.value)}><option value="">All farriers</option>{providers.map(p=><option key={p}>{p}</option>)}</select></label></FarrierMonthNavigator></section>
     {message&&<p className="workspace-notice no-print" role="status">{message}</p>}
     <div ref={formArea} className="farrier-day-sheet">
       {editing&&<FarrierPlanForm key={formKey} existing={editing==="new"?undefined:editing} date={date} provider={provider||"Shelly"} onClose={()=>setEditing(null)} onSaved={plan=>{setDate(plan.date);setProvider("");setMessage(`${horse(plan.horseId)?.name??"Horse"} — proposed work saved for week ${isoWeek(plan.date).week}. Choose Plan work to add the next horse.`);}}/>}

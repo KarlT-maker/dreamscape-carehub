@@ -27,6 +27,20 @@ export function isoWeekStart(year: number, week: number) {
   return offsetDate(weekStart(`${year}-01-04`), (week - 1) * 7);
 }
 export function isoWeeksInYear(year: number) { return isoWeek(`${year}-12-28`).week; }
+// Match the paper sheet: group by the Monday's month, with the new year's
+// first ISO week under January even when its Monday is in December.
+export function billingWeekMonth(date: string) {
+  const week=isoWeek(date);
+  return Number(week.start.slice(0,4))<week.year?1:Number(week.start.slice(5,7));
+}
+export function billingMonthWeeks(year:number,month:number) {
+  return Array.from({length:isoWeeksInYear(year)},(_,i)=>isoWeek(isoWeekStart(year,i+1))).filter(w=>billingWeekMonth(w.start)===month);
+}
+export function billingWeekRange(date:string) {
+  const week=isoWeek(date);
+  const options:Intl.DateTimeFormatOptions={month:"short",day:"numeric",...(week.start.slice(0,4)!==week.end.slice(0,4)?{year:"numeric" as const}:{})};
+  return `${dateLabel(week.start,options)}–${dateLabel(week.end,options)}`;
+}
 export function offsetMonth(date: string, months: number) {
   const d = new Date(date.slice(0, 7) + "-01T12:00:00Z");
   d.setUTCMonth(d.getUTCMonth() + months);

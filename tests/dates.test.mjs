@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ranchDate, offsetDate, age, instructionState, weekStart, offsetMonth, calendarMonthDates } from '../src/lib/dates.ts';
+import { ranchDate, offsetDate, age, instructionState, weekStart, offsetMonth, calendarMonthDates, billingMonthWeeks, billingWeekMonth, billingWeekRange, isoWeeksInYear } from '../src/lib/dates.ts';
 
 test('ranch dates use Pacific time rather than UTC', () => {
   assert.equal(ranchDate(new Date('2026-09-10T02:00:00Z')), '2026-09-09');
@@ -20,6 +20,20 @@ test('month navigation does not skip February when starting on the 31st', () => 
   assert.equal(offsetMonth('2026-01-31',1),'2026-02-01');
   assert.equal(offsetMonth('2026-12-31',1),'2027-01-01');
   assert.equal(offsetMonth('2027-01-31',-1),'2026-12-01');
+});
+
+test('month groups match the paper sheet without dropping or duplicating billing weeks at year boundaries',()=>{
+  assert.deepEqual(billingMonthWeeks(2027,1).map(w=>w.week),[1,2,3,4]);
+  assert.deepEqual(billingMonthWeeks(2027,2).map(w=>w.week),[5,6,7,8]);
+  assert.deepEqual(billingMonthWeeks(2027,3).map(w=>w.week),[9,10,11,12,13]);
+  assert.equal(billingWeekMonth('2026-11-01'),10);
+  assert.equal(billingMonthWeeks(2026,1)[0].start,'2025-12-29');
+  assert.equal(billingWeekMonth('2027-01-01'),12);
+  assert.match(billingWeekRange('2026-12-28'),/2026.*2027/);
+  for(const year of [2024,2025,2026,2027,2028]){
+    const weeks=Array.from({length:12},(_,i)=>billingMonthWeeks(year,i+1)).flat();
+    assert.deepEqual(weeks.map(w=>w.week),Array.from({length:isoWeeksInYear(year)},(_,i)=>i+1));
+  }
 });
 
 test('calendar grids contain full Monday-Sunday weeks and every day of the month', () => {
