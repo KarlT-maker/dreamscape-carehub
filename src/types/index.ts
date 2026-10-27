@@ -105,4 +105,7 @@ export interface HistoryEntry {
   detail: string;
   author: string;
   provider?: string;
+  farrierWork?: "Trim" | "Shoeing" | "Reset / refit" | "Shoe removal" | "Other";
+  farrierFeet?: string;
+  voided?: boolean;
 }

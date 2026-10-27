@@ -12,6 +12,33 @@ export function offsetDate(date: string, days: number) {
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
+export function weekStart(date: string) {
+  return offsetDate(date, -((new Date(date + "T12:00:00Z").getUTCDay() + 6) % 7));
+}
+// ISO weeks run Monday-Sunday; the week containing January 4 is week 1.
+export function isoWeek(date: string) {
+  const start = weekStart(date);
+  const year = Number(offsetDate(start, 3).slice(0, 4));
+  const first = weekStart(`${year}-01-04`);
+  const week = 1 + Math.round((Date.parse(start) - Date.parse(first)) / 604800000);
+  return {year, week, start, end: offsetDate(start, 6)};
+}
+export function isoWeekStart(year: number, week: number) {
+  return offsetDate(weekStart(`${year}-01-04`), (week - 1) * 7);
+}
+export function isoWeeksInYear(year: number) { return isoWeek(`${year}-12-28`).week; }
+export function offsetMonth(date: string, months: number) {
+  const d = new Date(date.slice(0, 7) + "-01T12:00:00Z");
+  d.setUTCMonth(d.getUTCMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
+export function calendarMonthDates(date: string) {
+  const start = weekStart(date.slice(0, 7) + "-01");
+  const end = offsetDate(weekStart(offsetDate(offsetMonth(date, 1), -1)), 6);
+  const days: string[] = [];
+  for (let day = start; day <= end; day = offsetDate(day, 1)) days.push(day);
+  return days;
+}
 export function dateLabel(
   date: string,
   options: Intl.DateTimeFormatOptions = {

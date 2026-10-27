@@ -13,6 +13,7 @@ import {
   Users,
   LayoutGrid,
   LogOut,
+  ClipboardList,
 } from "lucide-react";
 const boardLinks = [
   { href: "/boards/full", label: "Full board", icon: LayoutGrid },
@@ -24,6 +25,7 @@ const links = [
   { href: "/", label: "Today", icon: Sun },
   { href: "/horses", label: "Horses", icon: Fence },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
+  { href: "/farrier", label: "Farrier records", icon: ClipboardList },
   { href: "/administration", label: "Administration", icon: Settings },
 ];
 export function Shell({ children }: { children: React.ReactNode }) {

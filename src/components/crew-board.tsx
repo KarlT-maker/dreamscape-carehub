@@ -1,92 +1,91 @@
 "use client";
-import { useState } from "react";
-import { paddockNames } from "@/lib/data/workspace";
+import { useEffect, useRef, useState } from "react";
+import { CalendarDays, ClipboardEdit, Sun } from "lucide-react";
 import { useBarn } from "./provider";
-import { dateLabel, offsetDate } from "@/lib/dates";
+import { calendarMonthDates, dateLabel, offsetDate, offsetMonth, weekStart } from "@/lib/dates";
+import { crewForDate } from "@/lib/crew-calendar";
+import { paddockNames } from "@/lib/data/workspace";
 import { PADDOCKS } from "@/lib/data/roster";
 import { ROUNDS } from "@/lib/schedules";
+import { CrewEditor } from "./crew-editor";
 import { Empty, PageHeader } from "./ui";
-import { RecordForm } from "./record-form";
-import type { Helper, DayOff, Round, ShiftAssignment } from "@/types";
-function monday(date:string) { return offsetDate(date,-((new Date(date+"T12:00:00Z").getUTCDay()+6)%7)); }
-function HelperForm({existing:initial,onClose}:{existing?:Helper;onClose:()=>void}) {
-  const {savePlanning}=useBarn();
-  const [existing]=useState(initial);
-  const [id]=useState(()=>existing?.id ?? crypto.randomUUID());
-  return <RecordForm title={existing?"Edit helper name":"Add helper to schedule"} onClose={onClose} saveLabel="Save helper" fields={[{name:"name",label:"Helper name",value:existing?.name,required:true}]} onSave={f=>savePlanning("helpers",{...existing,id,name:f.name,initials:f.name.split(/\s+/).slice(0,2).map(n=>n[0]).join("").toUpperCase()},existing)}/>;
-}
-function DayOffForm({existing:initial,onClose}:{existing?:DayOff;onClose:()=>void}) {
-  const {savePlanning,helpers,today}=useBarn();
-  const [existing]=useState(initial);
-  const [id]=useState(()=>existing?.id ?? crypto.randomUUID());
-  return <RecordForm title={existing?"Edit day off":"Add day off"} saveLabel="Save day off" onClose={onClose} fields={[
-    {name:"helperId",label:"Helper",value:existing?.helperId ?? "",required:true,options:[{value:"",label:"Choose a helper"},...helpers.map(h=>({value:h.id,label:h.name}))]},
-    {name:"date",label:"Date",type:"date",value:existing?.date ?? today,required:true},
-    {name:"note",label:"Note (optional)",value:existing?.note},
-    ...(existing?[{name:"status",label:"Status",value:existing.cancelled?"cancelled":"off",options:[{value:"off",label:"Day off"},{value:"cancelled",label:"Cancelled"}]}]:[]),
-  ]} onSave={f=>savePlanning("daysOff",{...existing,id,helperId:f.helperId,date:f.date,note:f.note,cancelled:f.status==="cancelled"},existing)}/>;
-}
-export function CrewBoard() {
-  const {today,helpers,shifts,daysOff,horses,savePlanning,saving,uncertain}=useBarn();
-  const [week,setWeek]=useState(()=>monday(today));
-  const [round,setRound]=useState<Round>("AM");
-  const [search,setSearch]=useState("");
-  const [editingHelper,setEditingHelper]=useState<Helper|"new"|null>(null);
-  const [editingOff,setEditingOff]=useState<DayOff|"new"|null>(null);
-  const [message,setMessage]=useState("");
-  const dates=Array.from({length:7},(_,i)=>offsetDate(week,i));
-  const on=(date:string,paddock:string)=>shifts.filter(s=>!s.cancelled&&s.date===date&&s.paddock===paddock&&s.period===round);
-  const helperName=(id:string)=>helpers.find(h=>h.id===id)?.name??"Unknown helper";
-  const isOff=(helperId:string,date:string)=>daysOff.some(d=>!d.cancelled&&d.helperId===helperId&&d.date===date);
-  const visible=paddockNames(horses,PADDOCKS).filter(p=>!search.trim()||p.toLowerCase().includes(search.trim().toLowerCase())||dates.some(date=>on(date,p).some(s=>helperName(s.helperId).toLowerCase().includes(search.trim().toLowerCase()))));
-  const weekOff=daysOff.filter(d=>!d.cancelled&&d.date>=week&&d.date<=dates[6]).sort((a,b)=>a.date.localeCompare(b.date));
-  async function assign(date:string,paddock:string,helperId:string) {
-    if (!helperId || on(date,paddock).some(s=>s.helperId===helperId)) return;
-    const before=shifts.find(s=>s.date===date&&s.paddock===paddock&&s.period===round&&s.helperId===helperId);
-    const next={...before,id:before?.id??crypto.randomUUID(),date,paddock,period:round,helperId,cancelled:false};
-    setMessage("");
-    if(await savePlanning("shifts",next,before)) setMessage("Assignment saved.");
-  }
-  async function unassign(shift:ShiftAssignment) {
-    setMessage("");
-    if(await savePlanning("shifts",{...shift,cancelled:true},shift)) setMessage("Helper removed from this round. Other helpers stay assigned.");
-  }
+
+type View = "today" | "calendar" | "edit";
+function DayAssignments({date,showEmpty=false}:{date:string;showEmpty?:boolean}) {
+  const {shifts,helpers,horses,daysOff}=useBarn();
+  const groups=crewForDate(shifts,helpers,date);
+  const off=daysOff.filter(d=>!d.cancelled&&d.date===date);
+  const paddocks=showEmpty ? [...new Set([...paddockNames(horses,PADDOCKS),...groups.map(g=>g.paddock)])] : [...new Set(groups.map(g=>g.paddock))];
   return <>
-    <PageHeader eyebrow="BARN TEAM" title="Who's on what" description="Add helper names, then choose who covers each paddock during the week." action={<button className="button" onClick={()=>setEditingHelper("new")}>Add helper</button>}/>
-    <p className="workspace-notice">Names here are for the rota. Adding a name does not create a login or send an email.</p>
-    {editingHelper && <HelperForm key={editingHelper==="new"?"new":editingHelper.id} existing={editingHelper==="new"?undefined:editingHelper} onClose={()=>setEditingHelper(null)}/>}
-    <div className="helper-chips">{helpers.map(h=><button className="button secondary small" key={h.id} onClick={()=>setEditingHelper(h)}>Edit {h.name}</button>)}</div>
-    <section className="panel">
-      <div className="board-toolbar schedule-toolbar">
-        <button className="button secondary" onClick={()=>setWeek(offsetDate(week,-7))}>Previous week</button>
-        <label>Week of<input type="date" required value={week} onChange={e=>e.target.value&&setWeek(monday(e.target.value))}/></label>
-        <button className="button secondary" onClick={()=>setWeek(offsetDate(week,7))}>Next week</button>
-        <button className="button secondary" onClick={()=>setWeek(monday(today))}>This week</button>
-        <label>Round<select value={round} onChange={e=>setRound(e.target.value as Round)}>{ROUNDS.map(r=><option key={r}>{r}</option>)}</select></label>
-        <label>Find paddock or helper<input value={search} onChange={e=>setSearch(e.target.value)}/></label>
+    {!groups.length&&<Empty>No assignments entered for this day yet. Use Edit schedule to add the team.</Empty>}
+    <div className="crew-today-grid">{paddocks.map(paddock=><section className="panel crew-paddock" key={paddock}>
+      <div className="panel-heading"><h3>{paddock}</h3></div>
+      <dl>{ROUNDS.map(round=>{
+        const people=groups.find(g=>g.paddock===paddock&&g.period===round)?.people??[];
+        return <div key={round}><dt>{round}</dt><dd>{people.length ? people.map(person=><span className="crew-name" key={person.id}>{person.name}{off.some(d=>d.helperId===person.id)&&<small className="schedule-warning">Day off — review cover</small>}</span>):<span className="muted">Unassigned</span>}</dd></div>;
+      })}</dl>
+    </section>)}</div>
+    <section className="panel crew-days-off"><div className="panel-heading"><h3>Days off</h3></div>
+      <div className="padded">{off.length?off.map(day=><p key={day.id}><strong>{helpers.find(h=>h.id===day.helperId)?.name??"Unknown helper"}</strong>{day.note&&" · "+day.note}</p>):<p className="muted">No days off recorded.</p>}</div>
+    </section>
+  </>;
+}
+
+function CrewCalendar({date,onDateChange,onEdit}:{date:string;onDateChange:(date:string)=>void;onEdit:(date:string)=>void}) {
+  const {today,shifts,helpers,daysOff}=useBarn();
+  const [mode,setMode]=useState<"month"|"week">("month");
+  const [selected,setSelected]=useState<string|null>(null);
+  const detail=useRef<HTMLDivElement>(null);
+  useEffect(()=>{if(selected)detail.current?.scrollIntoView({behavior:"smooth",block:"start"});},[selected]);
+  const dates=mode==="month"?calendarMonthDates(date):Array.from({length:7},(_,i)=>offsetDate(weekStart(date),i));
+  const title=mode==="month"?dateLabel(date,{month:"long",year:"numeric"}):"Week of "+dateLabel(weekStart(date));
+  function move(amount:number) {setSelected(null);onDateChange(mode==="month"?offsetMonth(date,amount):offsetDate(date,amount*7));}
+  function selectDay(day:string) {setSelected(day);if(day===selected)detail.current?.scrollIntoView({behavior:"smooth",block:"start"});}
+  return <>
+    <section className="panel crew-calendar">
+      <div className="crew-calendar-toolbar">
+        <div className="filter-row" aria-label="Calendar view"><button aria-pressed={mode==="month"} className={mode==="month"?"active":""} onClick={()=>{setMode("month");setSelected(null);}}>Month</button><button aria-pressed={mode==="week"} className={mode==="week"?"active":""} onClick={()=>{setMode("week");setSelected(null);}}>Week</button></div>
+        <button className="button secondary" onClick={()=>{setSelected(null);onDateChange(today);}}>Go to today</button>
+        <label>{mode==="month"?"Choose month":"Choose week"}<input type={mode==="month"?"month":"date"} value={mode==="month"?date.slice(0,7):weekStart(date)} onInput={e=>{if(e.currentTarget.value){setSelected(null);onDateChange(mode==="month"?e.currentTarget.value+"-01":e.currentTarget.value);}}}/></label>
       </div>
-      <p className="padded muted">Choose Add helper in a cell to assign one or more people together. Use × beside a name to remove only that person. Each change saves online. Switch Round to plan AM, Lunch or PM.</p>
-      {!helpers.length ? <Empty>Choose Add helper above to start the weekly schedule.</Empty> : <div className="schedule-scroll"><table className="schedule-table"><thead><tr><th scope="col">Paddock</th>{dates.map(date=><th scope="col" key={date}>{dateLabel(date,{weekday:"short",month:"short",day:"numeric"})}</th>)}</tr></thead><tbody>
-        {visible.map(paddock=><tr key={paddock}><th scope="row">{paddock}</th>{dates.map(date=>{
-          const team=on(date,paddock);
-          const available=helpers.filter(h=>!team.some(s=>s.helperId===h.id));
-          return <td key={date} className={date===today?"schedule-today":undefined}>
-            <div className="schedule-team">{team.length ? team.map(shift=><div className="schedule-person" key={shift.id}>
-              <span>{helperName(shift.helperId)}{isOff(shift.helperId,date)&&<small className="schedule-warning">Day off — review cover</small>}</span>
-              <button type="button" className="schedule-remove" disabled={saving||uncertain} aria-label={`Remove ${helperName(shift.helperId)} from ${paddock} · ${date} · ${round}`} onClick={()=>void unassign(shift)}>×</button>
-            </div>):<span className="muted">Unassigned</span>}</div>
-            <select aria-label={`Add helper · ${paddock} · ${date} · ${round}`} value="" disabled={saving||uncertain||!available.some(h=>!isOff(h.id,date))} onChange={e=>void assign(date,paddock,e.target.value)}>
-              <option value="">Add helper…</option>{available.map(h=><option key={h.id} value={h.id} disabled={isOff(h.id,date)}>{h.name}{isOff(h.id,date)?" (day off)":""}</option>)}
-            </select>
-          </td>;
-        })}</tr>)}
-      </tbody></table></div>}
-      <p className="padded" role="status">{message}</p>
+      <div className="crew-calendar-heading"><button className="button secondary" aria-label={mode==="month"?"Previous month":"Previous week"} onClick={()=>move(-1)}>← Previous</button><h2 aria-live="polite">{title}</h2><button className="button secondary" aria-label={mode==="month"?"Next month":"Next week"} onClick={()=>move(1)}>Next →</button></div>
+      <p className="padded muted">Choose a day to see the full team and days off. Assignments are shown for AM, Lunch and PM.</p>
+      {mode==="month"&&<div className="crew-weekday-head" aria-hidden="true">{["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d=><span key={d}>{d}</span>)}</div>}
+      <div className={mode==="month"?"crew-month-grid":"crew-week-grid"}>{dates.map(day=>{
+        const groups=crewForDate(shifts,helpers,day);
+        const off=daysOff.filter(d=>!d.cancelled&&d.date===day);
+        const shown=mode==="month"?groups.slice(0,3):groups;
+        const outside=day.slice(0,7)!==date.slice(0,7);
+        return <button type="button" key={day} className={"crew-calendar-day"+(outside&&mode==="month"?" outside-month":"")+(day===today?" is-today":"")+(day===selected?" selected-day":"")} aria-label={"View assignments for "+dateLabel(day,{weekday:"long",month:"long",day:"numeric",year:"numeric"})} aria-pressed={day===selected} onClick={()=>selectDay(day)}>
+          <span className="crew-day-number"><span className="crew-short-date">{Number(day.slice(-2))}</span><span className="crew-long-date">{dateLabel(day,{weekday:"short",month:"short",day:"numeric"})}</span>{day===today&&<small>Today</small>}</span>
+          {!groups.length&&<span className="muted crew-no-assignment">No assignments</span>}
+          {shown.map(group=><span className="crew-calendar-assignment" key={group.paddock+"-"+group.period}><strong>{group.paddock} <em>{group.period}</em></strong><span>{group.people.map(p=>p.name).join(", ")}</span></span>)}
+          {groups.length>shown.length&&<span className="crew-more">+{groups.length-shown.length} more · View day</span>}
+          {!!off.length&&<span className="crew-calendar-off">Off: {off.map(d=>helpers.find(h=>h.id===d.helperId)?.name??"Unknown helper").join(", ")}</span>}
+        </button>;
+      })}</div>
     </section>
-    <section className="panel">
-      <div className="panel-heading"><h2>Days off this week</h2><button className="button secondary" disabled={!helpers.length} onClick={()=>setEditingOff("new")}>Add day off</button></div>
-      {editingOff&&<DayOffForm key={editingOff==="new"?"new":editingOff.id} existing={editingOff==="new"?undefined:editingOff} onClose={()=>setEditingOff(null)}/>}
-      {weekOff.length ? <div className="padded">{weekOff.map(off=><div className="day-off-row" key={off.id}><span><strong>{helperName(off.helperId)}</strong> · {dateLabel(off.date)}{off.note&&" · "+off.note}</span><button className="text-button" onClick={()=>setEditingOff(off)}>Edit day off</button></div>)}</div>:<Empty>No days off recorded for this week.</Empty>}
-    </section>
+    {selected&&<div ref={detail} className="crew-day-detail" tabIndex={-1}>
+      <div className="crew-editor-heading"><div><p className="eyebrow">DAY DETAILS</p><h2>{dateLabel(selected,{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</h2></div><button className="button" onClick={()=>onEdit(selected)}>Edit this week</button><button className="button secondary" onClick={()=>setSelected(null)}>Close day details</button></div>
+      <DayAssignments date={selected}/>
+    </div>}
+  </>;
+}
+
+export function CrewBoard() {
+  const {today,saving,uncertain}=useBarn();
+  const [view,setView]=useState<View>("today");
+  const [date,setDate]=useState(today);
+  function edit(day:string) {setDate(day);setView("edit");}
+  return <>
+    <PageHeader eyebrow="BARN TEAM" title="Who's on what" description="See today's team, look ahead on the calendar, or edit the schedule."/>
+    <nav className="crew-view-nav" aria-label="Team schedule views">
+      <button className={view==="today"?"active":""} aria-current={view==="today"?"page":undefined} disabled={saving||uncertain} onClick={()=>setView("today")}><Sun size={19}/>Today</button>
+      <button className={view==="calendar"?"active":""} aria-current={view==="calendar"?"page":undefined} disabled={saving||uncertain} onClick={()=>{if(view==="today")setDate(today);setView("calendar");}}><CalendarDays size={19}/>Calendar</button>
+      <button className={view==="edit"?"active":""} aria-current={view==="edit"?"page":undefined} disabled={saving||uncertain} onClick={()=>edit(view==="today"?today:date)}><ClipboardEdit size={19}/>Edit schedule</button>
+    </nav>
+    {view==="today"&&<section aria-label="Today's assignments"><div className="crew-editor-heading"><h2>{dateLabel(today,{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</h2><span className="badge">Today’s assignments</span></div><DayAssignments date={today} showEmpty/></section>}
+    {view==="calendar"&&<CrewCalendar date={date} onDateChange={setDate} onEdit={edit}/>}
+    {view==="edit"&&<CrewEditor initialDate={date} onWeekChange={setDate}/>}
   </>;
 }

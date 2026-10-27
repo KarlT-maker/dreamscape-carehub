@@ -35,6 +35,9 @@ export function validateSnapshot(value: unknown): Snapshot {
   for (const event of d.events) if (!["Vet", "Farrier", "Dentist", "Medication change", "Feed change", "Vaccination", "Deworming", "Weight check", "Other"].includes(event.type) || (event.time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(event.time))) throw new Error("An appointment type or time is invalid.");
   for (const helper of d.helpers) if (!helper.name.trim()) throw new Error("Enter the helper's name.");
   for (const entry of d.history) if (!["Vet", "Farrier", "Medication", "Feed", "Weight", "Notes", "Photo"].includes(entry.type)) throw new Error("A history record type is invalid.");
+  for (const entry of d.history) {
+    if ((entry.farrierWork !== undefined && (entry.type !== "Farrier" || !["Trim", "Shoeing", "Reset / refit", "Shoe removal", "Other"].includes(entry.farrierWork))) || (entry.farrierFeet !== undefined && !isText(entry.farrierFeet)) || (entry.voided !== undefined && typeof entry.voided !== "boolean")) throw new Error("A farrier record is invalid.");
+  }
   if (!s.completions || typeof s.completions !== "object" || Array.isArray(s.completions) || !Object.values(s.completions).every(c => c && isText(c.completedAt) && isText(c.completedBy))) throw new Error("Saved task checkmarks are invalid.");
   return s;
 }

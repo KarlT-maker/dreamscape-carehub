@@ -96,6 +96,15 @@ try {
   r=await call('workspace',{role:'owner'});assert.deepEqual(r.value.snapshot.data.shifts,saved.data.shifts);check(true,'a separate screen reads the saved team assignments');
   next=structuredClone(saved);next.data.shifts.push({...next.data.shifts[1],id:'duplicate-helper'});
   r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});check(r.status===422,'the same helper cannot be duplicated within a team');
+  next=structuredClone(saved);next.data.history.push({id:'farrier-test',horseId,date:'2026-10-26',type:'Farrier',provider:'Shelly',title:'Shoeing',detail:'Front shoes, hind trim',farrierWork:'Shoeing',farrierFeet:'Front feet',voided:false,author:'Spoofed actor'});
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});
+  check(r.status===200 && r.value.snapshot.data.history.find(h=>h.id==='farrier-test').author==='Test helper','farrier records save with the authenticated helper identity');
+  saved=r.value.snapshot;r=await call('workspace',{role:'owner'});
+  assert.deepEqual(r.value.snapshot.data.history,saved.data.history);check(true,'farrier work is shared with the owner and preserved on a separate read');
+  next=structuredClone(saved);next.data.history.find(h=>h.id==='farrier-test').voided=true;
+  r=await call('save',{role:'owner',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});
+  check(r.status===200 && r.value.snapshot.data.history.find(h=>h.id==='farrier-test').voided,'an incorrect farrier entry can be retained and marked entered in error');
+  assert.deepEqual(r.value.snapshot.data.care,saved.data.care);check(true,'farrier corrections preserve all care instructions');
   console.log(`${checks} HTTP integration checks passed against the PHP API with a local WordPress/SQLite fixture.`);
 }catch(e){console.error(logs.slice(-5000));throw e;}
 finally{server.kill();}

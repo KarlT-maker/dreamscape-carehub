@@ -54,6 +54,9 @@ function bh_validate(array $s): array {
     foreach ($d['history'] as $h) {
         bh_require(!isset($h['provider']) || bh_text($h['provider']));
         bh_require(in_array($h['type'], ['Vet','Farrier','Medication','Feed','Weight','Notes','Photo'], true));
+        bh_require(!isset($h['farrierWork']) || ($h['type'] === 'Farrier' && in_array($h['farrierWork'], ['Trim','Shoeing','Reset / refit','Shoe removal','Other'], true)));
+        bh_require(!isset($h['farrierFeet']) || bh_text($h['farrierFeet']));
+        bh_require(!isset($h['voided']) || is_bool($h['voided']));
     }
     foreach ($d['helpers'] as $h) { bh_fields($h, ['name','initials']); bh_require(trim($h['name']) !== ''); }
     foreach (['shifts','daysOff'] as $key) foreach ($d[$key] as $r) {

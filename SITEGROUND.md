@@ -42,6 +42,10 @@ Lunch and all combinations of AM, Lunch and PM are supported. History authors
 are stamped with the signed-in account by the server. Helper names in the rota
 do not create accounts or send email. Several helpers can share a paddock and
 round; each has a separate assignment. Removing one preserves the others.
+Who's on what opens with today's read-only team by paddock and round. Calendar
+offers month/week browsing and day details, including days off. Edit schedule
+contains the existing weekly assignment editor; opening it from day details
+selects that day's week. All three views read the same saved assignments.
 Duplicate assignments for the same helper, paddock, date and round, and duplicate
 days off, are rejected. Bulk replacement and undo still require administrator permission.
 This beta requires internet; offline queuing, client access and photos are not
@@ -57,3 +61,8 @@ Checks: `npm test`, `npm run lint`, `npm run typecheck`,
 `php tests/server-validation.php`, and the production packaging command.
 Before releasing, verify unauthenticated denial, login, server persistence after
 reload, refresh in a second screen, conflicting edits, and reversible restore.
+# Farrier records
+
+The dedicated Farrier records page records completed work for one horse at a time, with Save & add next horse retaining the visit date and farrier. It uses the existing shared horse history, with optional work type, feet and entered-in-error fields; older unclassified records remain visible. Helpers can correct a record or mark it entered in error; records are never removed and the existing server audit retains previous revisions. The server stamps the signed-in account on changes.
+
+Weekly reports use ISO Monday-Sunday weeks, including the ISO week-year around New Year, and show date ranges beside the year/week. Counts exclude entries marked entered in error, count work entries rather than individual shoes, and can be filtered by farrier. Print week produces a paper/PDF-friendly report.
