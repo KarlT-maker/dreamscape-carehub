@@ -3,6 +3,7 @@ import {spawn} from 'node:child_process';
 import {mkdtempSync,mkdirSync,copyFileSync,cpSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {resolve,dirname} from 'node:path';
+import {changeCrewAssignments} from '../src/lib/data/planning.ts';
 const php=process.env.PHP_BINARY;
 if (!php) throw new Error('Set PHP_BINARY to the PHP executable with PDO SQLite available.');
 const root=resolve(import.meta.dirname,'..');
@@ -115,6 +116,19 @@ try {
   saved=r.value.snapshot;next=structuredClone(saved);next.data.history.push({...next.data.history.find(h=>h.id==='planned-done'),id:'duplicate-done'});
   r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});check(r.status===422,'a second completion for the same visit is rejected');
   r=await call('workspace',{role:'owner'});assert.deepEqual(r.value.snapshot.data,saved.data);check(true,'another account sees the plan and actual work together without lost data');
+  const dates=['2026-11-02','2026-11-03','2026-11-04','2026-11-05','2026-11-06','2026-11-07','2026-11-08'];
+  next={...saved,data:changeCrewAssignments(saved.data,{dates,paddock:'Test field',helperIds:['helper1','helper2'],action:'assign',beforeShifts:saved.data.shifts,beforeDaysOff:saved.data.daysOff})};
+  body={revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next};
+  r=await call('save',{role:'tester',body});
+  check(r.status===200 && r.value.snapshot.revision===saved.revision+1 && r.value.snapshot.data.shifts.filter(s=>dates.includes(s.date)&&!s.cancelled).length===42,'a helper saves two people across the whole week in one shared revision');
+  assert.deepEqual(r.value.snapshot.data.care,saved.data.care);assert.deepEqual(r.value.snapshot.data.history,saved.data.history);
+  saved=r.value.snapshot;r=await call('save',{role:'tester',body});
+  check(r.status===200 && r.value.snapshot.revision===saved.revision,'retrying the whole-week save does not duplicate assignments');
+  r=await call('workspace',{role:'owner'});assert.deepEqual(r.value.snapshot.data.shifts,saved.data.shifts);
+  check(true,'another account sees the entire weekly team together');
+  next={...saved,data:changeCrewAssignments(saved.data,{dates:['2026-11-04'],paddock:'Test field',helperIds:['helper1'],action:'remove',beforeShifts:saved.data.shifts,beforeDaysOff:saved.data.daysOff})};
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});
+  check(r.status===200 && r.value.snapshot.data.shifts.filter(s=>dates.includes(s.date)&&!s.cancelled).length===39 && r.value.snapshot.data.shifts.filter(s=>s.date==='2026-11-04'&&s.helperId==='helper2'&&!s.cancelled).length===3,'changing one day preserves the teammate and all other days');
   console.log(`${checks} HTTP integration checks passed against the PHP API with a local WordPress/SQLite fixture.`);
 }catch(e){console.error(logs.slice(-5000));throw e;}
 finally{server.kill();}

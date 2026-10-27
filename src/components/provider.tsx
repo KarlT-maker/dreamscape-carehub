@@ -5,7 +5,7 @@ import { offsetDate, ranchDate } from "@/lib/dates";
 import { dailyTasks, emptyData, emptySnapshot, readWorkspace, saveWorkspace, validateSnapshot, STORAGE_KEY, UNDO_KEY, type Snapshot } from "@/lib/data/workspace";
 import type { CalendarEvent, CareInstruction, HistoryEntry, Horse, TaskCompletion } from "@/types";
 import { sharedRequest, SharedError, type SharedSession, type SharedWorkspace } from "@/lib/shared";
-import { recordFarrierVisit, savePlanningRecord, type PlanningRecord, type PlanningSection } from "@/lib/data/planning";
+import { changeCrewAssignments, recordFarrierVisit, savePlanningRecord, type CrewAssignmentChange, type PlanningRecord, type PlanningSection } from "@/lib/data/planning";
 
 type Data = ReturnType<typeof careRepository.load>;
 
@@ -45,6 +45,7 @@ type Context = Data & {
   retrySave: () => Promise<boolean>;
   logout: () => Promise<void>;
   savePlanning: <K extends PlanningSection>(section: K, record: PlanningRecord<K>, before?: PlanningRecord<K>) => Promise<boolean>;
+  saveCrewAssignments: (change:CrewAssignmentChange) => Promise<boolean>;
   completeFarrierVisit: (record: HistoryEntry, plan: CalendarEvent) => Promise<boolean>;
 };
 
@@ -163,6 +164,13 @@ export function BarnProvider({
     try { return await changeData(data => savePlanningRecord(data, section, record, before)); }
     catch (error) { setStorageError(error instanceof Error ? error.message : "This change could not be saved."); return false; }
   }
+  async function saveCrewAssignments(change:CrewAssignmentChange) {
+    try {
+      const next=changeCrewAssignments(current.current.data,change);
+      if(next===current.current.data)return true;
+      return await commit({...current.current,data:next});
+    }catch(error){setStorageError(error instanceof Error?error.message:"The assignments could not be saved.");return false;}
+  }
 
   function resetWorkspace(mode: Snapshot["mode"]) {
     const data = mode === "examples" ? careRepository.load(today) : emptyData();
@@ -248,6 +256,7 @@ export function BarnProvider({
         completions,
         toggleTask,
         savePlanning,
+        saveCrewAssignments,
         completeFarrierVisit: async (record,plan) => {
           try {return await changeData(data=>recordFarrierVisit(data,record,plan));}
           catch(error){setStorageError(error instanceof Error?error.message:"The farrier work could not be saved.");return false;}
