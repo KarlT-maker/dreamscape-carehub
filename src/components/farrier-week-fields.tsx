@@ -4,7 +4,7 @@ import { billingMonthWeeks, billingWeekMonth, billingWeekRange, dateLabel, isoWe
 
 const months=Array.from({length:12},(_,i)=>({number:i+1,name:dateLabel(`2026-${String(i+1).padStart(2,"0")}-15`,{month:"long"})}));
 function yearOptions(year:number) {
-  const first=Math.min(2000,year),last=Math.max(year,Number(ranchDate().slice(0,4))+10);
+  const first=Math.min(2024,year),last=Math.max(year,Number(ranchDate().slice(0,4))+10);
   return Array.from({length:last-first+1},(_,i)=>first+i);
 }
 function sameMonthWeek(date:string,year:number) {
