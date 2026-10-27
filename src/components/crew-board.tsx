@@ -31,7 +31,7 @@ function DayAssignments({date,showEmpty=false}:{date:string;showEmpty?:boolean})
   </>;
 }
 
-function CrewCalendar({date,onDateChange,onEdit}:{date:string;onDateChange:(date:string)=>void;onEdit:(date:string)=>void}) {
+function CrewCalendar({date,onDateChange,onEdit,onToday}:{date:string;onDateChange:(date:string)=>void;onEdit:(date:string)=>void;onToday:()=>void}) {
   const {today,shifts,helpers,daysOff}=useBarn();
   const [mode,setMode]=useState<"month"|"week">("month");
   const [selected,setSelected]=useState<string|null>(null);
@@ -45,7 +45,7 @@ function CrewCalendar({date,onDateChange,onEdit}:{date:string;onDateChange:(date
     <section className="panel crew-calendar">
       <div className="crew-calendar-toolbar">
         <div className="filter-row" aria-label="Calendar view"><button aria-pressed={mode==="month"} className={mode==="month"?"active":""} onClick={()=>{setMode("month");setSelected(null);}}>Month</button><button aria-pressed={mode==="week"} className={mode==="week"?"active":""} onClick={()=>{setMode("week");setSelected(null);}}>Week</button></div>
-        <button className="button secondary" onClick={()=>{setSelected(null);onDateChange(today);}}>Go to today</button>
+        <button className="button secondary" onClick={onToday}>Go to today</button>
         <label>{mode==="month"?"Choose month":"Choose week"}<input type={mode==="month"?"month":"date"} value={mode==="month"?date.slice(0,7):weekStart(date)} onInput={e=>{if(e.currentTarget.value){setSelected(null);onDateChange(mode==="month"?e.currentTarget.value+"-01":e.currentTarget.value);}}}/></label>
       </div>
       <div className="crew-calendar-heading"><button className="button secondary" aria-label={mode==="month"?"Previous month":"Previous week"} onClick={()=>move(-1)}>← Previous</button><h2 aria-live="polite">{title}</h2><button className="button secondary" aria-label={mode==="month"?"Next month":"Next week"} onClick={()=>move(1)}>Next →</button></div>
@@ -85,7 +85,7 @@ export function CrewBoard() {
       <button className={view==="edit"?"active":""} aria-current={view==="edit"?"page":undefined} disabled={saving||uncertain} onClick={()=>edit(view==="today"?today:date)}><ClipboardEdit size={19}/>Edit schedule</button>
     </nav>
     {view==="today"&&<section aria-label="Today's assignments"><div className="crew-editor-heading"><h2>{dateLabel(today,{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</h2><span className="badge">Today’s assignments</span></div><DayAssignments date={today} showEmpty/></section>}
-    {view==="calendar"&&<CrewCalendar date={date} onDateChange={setDate} onEdit={edit}/>}
+    {view==="calendar"&&<CrewCalendar date={date} onDateChange={setDate} onEdit={edit} onToday={()=>{setDate(today);setView("today");}}/>}
     {view==="edit"&&<CrewEditor initialDate={date} onWeekChange={setDate}/>}
   </>;
 }
