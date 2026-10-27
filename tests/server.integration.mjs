@@ -105,6 +105,16 @@ try {
   r=await call('save',{role:'owner',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});
   check(r.status===200 && r.value.snapshot.data.history.find(h=>h.id==='farrier-test').voided,'an incorrect farrier entry can be retained and marked entered in error');
   assert.deepEqual(r.value.snapshot.data.care,saved.data.care);check(true,'farrier corrections preserve all care instructions');
+  saved=r.value.snapshot;next=structuredClone(saved);
+  next.data.events.push({id:'planned-farrier',horseId,date:'2027-02-08',type:'Farrier',provider:'Shelly',time:'',reason:'Shoeing',notes:'Check fronts',farrierWork:'Shoeing',farrierFeet:'Front feet'});
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});
+  check(r.status===200 && r.value.snapshot.data.history.length===saved.data.history.length,'saving a future farrier plan does not create completed work');
+  saved=r.value.snapshot;next=structuredClone(saved);next.data.history.push({id:'planned-done',horseId,date:'2026-10-27',type:'Farrier',provider:'Shelly',title:'Trim',detail:'Actual work differs from plan',author:'Spoofed',farrierWork:'Trim',sourceEventId:'planned-farrier'});
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});
+  check(r.status===200 && r.value.snapshot.data.history.find(h=>h.id==='planned-done').author==='Test helper' && r.value.snapshot.data.events.find(e=>e.id==='planned-farrier').farrierWork==='Shoeing','recording actual work preserves the original proposal and stamps the helper');
+  saved=r.value.snapshot;next=structuredClone(saved);next.data.history.push({...next.data.history.find(h=>h.id==='planned-done'),id:'duplicate-done'});
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});check(r.status===422,'a second completion for the same visit is rejected');
+  r=await call('workspace',{role:'owner'});assert.deepEqual(r.value.snapshot.data,saved.data);check(true,'another account sees the plan and actual work together without lost data');
   console.log(`${checks} HTTP integration checks passed against the PHP API with a local WordPress/SQLite fixture.`);
 }catch(e){console.error(logs.slice(-5000));throw e;}
 finally{server.kill();}

@@ -6,7 +6,7 @@ import { dateLabel } from "@/lib/dates";
 import { Empty } from "./ui";
 import { horsePath } from "@/lib/horse-path";
 export function EventList({ events, onEdit }: { events: CalendarEvent[]; onEdit?: (event: CalendarEvent) => void }) {
-  const { horses } = useBarn();
+  const { horses, history } = useBarn();
   return (
     <div className="event-list">
       {!events.length && <Empty>No appointments for this selection.</Empty>}
@@ -21,6 +21,7 @@ export function EventList({ events, onEdit }: { events: CalendarEvent[]; onEdit?
               <span className="badge">{event.type}</span>
               <span>{event.time ? `${event.time} PT` : "Time not set"}</span>
               {event.cancelled && <span className="badge amber">Cancelled</span>}
+              {history.some(h=>h.sourceEventId===event.id&&!h.voided)&&<span className="badge">Work recorded</span>}
             </div>
             <h3>
               <Link href={horsePath(event.horseId, "Calendar")}>
@@ -30,6 +31,7 @@ export function EventList({ events, onEdit }: { events: CalendarEvent[]; onEdit?
             </h3>
             <p className="muted">{event.provider}</p>
             <p>{event.notes}</p>
+            {event.type==="Farrier"&&<Link className="text-button" href="/farrier">Open farrier calendar</Link>}
             {onEdit && <button className="text-button" onClick={()=>onEdit(event)}>Edit appointment</button>}
           </div>
         </article>

@@ -3,9 +3,9 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { careRepository, rosterSnapshot } from "@/lib/data/repository";
 import { offsetDate, ranchDate } from "@/lib/dates";
 import { dailyTasks, emptyData, emptySnapshot, readWorkspace, saveWorkspace, validateSnapshot, STORAGE_KEY, UNDO_KEY, type Snapshot } from "@/lib/data/workspace";
-import type { CareInstruction, Horse, TaskCompletion } from "@/types";
+import type { CalendarEvent, CareInstruction, HistoryEntry, Horse, TaskCompletion } from "@/types";
 import { sharedRequest, SharedError, type SharedSession, type SharedWorkspace } from "@/lib/shared";
-import { savePlanningRecord, type PlanningRecord, type PlanningSection } from "@/lib/data/planning";
+import { recordFarrierVisit, savePlanningRecord, type PlanningRecord, type PlanningSection } from "@/lib/data/planning";
 
 type Data = ReturnType<typeof careRepository.load>;
 
@@ -45,6 +45,7 @@ type Context = Data & {
   retrySave: () => Promise<boolean>;
   logout: () => Promise<void>;
   savePlanning: <K extends PlanningSection>(section: K, record: PlanningRecord<K>, before?: PlanningRecord<K>) => Promise<boolean>;
+  completeFarrierVisit: (record: HistoryEntry, plan: CalendarEvent) => Promise<boolean>;
 };
 
 const BarnContext = createContext<Context | null>(null);
@@ -247,6 +248,10 @@ export function BarnProvider({
         completions,
         toggleTask,
         savePlanning,
+        completeFarrierVisit: async (record,plan) => {
+          try {return await changeData(data=>recordFarrierVisit(data,record,plan));}
+          catch(error){setStorageError(error instanceof Error?error.message:"The farrier work could not be saved.");return false;}
+        },
         addHorse: (horse) => current.current.data.horses.some(h => h.id === horse.id) ? Promise.resolve(true) : changeData((prev) => ({ ...prev, horses: [...prev.horses, horse] })),
         updateHorse: (horse, before) => stale(before, current.current.data.horses.find(h => h.id === horse.id)) ? Promise.resolve(false) : changeData((prev) => ({ ...prev, horses: prev.horses.map(h => h.id === horse.id ? horse : h) })),
         addCare,

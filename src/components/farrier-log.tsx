@@ -8,9 +8,16 @@ import { farrierTotals, farrierWeekRecords } from "@/lib/farrier";
 import { horsePath } from "@/lib/horse-path";
 import { Empty, PageHeader } from "./ui";
 import { FarrierForm } from "./farrier-form";
+import { FarrierPlans } from "./farrier-plans";
 import type { HistoryEntry } from "@/types";
 
 export function FarrierLog() {
+  const {saving,uncertain}=useBarn();
+  const [view,setView]=useState<"calendar"|"records">("calendar");
+  return <div className="farrier-page"><nav className="crew-view-nav no-print" aria-label="Farrier views"><button aria-current={view==="calendar"?"page":undefined} className={view==="calendar"?"active":""} disabled={saving||uncertain} onClick={()=>setView("calendar")}>Calendar &amp; planned visits</button><button aria-current={view==="records"?"page":undefined} className={view==="records"?"active":""} disabled={saving||uncertain} onClick={()=>setView("records")}>Work records</button></nav>{view==="calendar"?<FarrierPlans/>:<FarrierRecords/>}</div>;
+}
+
+function FarrierRecords() {
   const {today,history,horses,saving,uncertain}=useBarn();
   const [date,setDate]=useState(today);
   const [provider,setProvider]=useState("");

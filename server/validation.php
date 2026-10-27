@@ -50,6 +50,8 @@ function bh_validate(array $s): array {
     foreach ($d['events'] as $e) {
         bh_require(in_array($e['type'], ['Vet','Farrier','Dentist','Medication change','Feed change','Vaccination','Deworming','Weight check','Other'], true));
         bh_require($e['time'] === '' || preg_match('/^([01][0-9]|2[0-3]):[0-5][0-9]$/D', $e['time']) === 1);
+        bh_require(!isset($e['farrierWork']) || ($e['type'] === 'Farrier' && in_array($e['farrierWork'], ['Trim','Shoeing','Shoe removal','Other'], true)));
+        bh_require(!isset($e['farrierFeet']) || bh_text($e['farrierFeet']));
     }
     foreach ($d['history'] as $h) {
         bh_require(!isset($h['provider']) || bh_text($h['provider']));
@@ -57,6 +59,13 @@ function bh_validate(array $s): array {
         bh_require(!isset($h['farrierWork']) || ($h['type'] === 'Farrier' && in_array($h['farrierWork'], ['Trim','Shoeing','Reset / refit','Shoe removal','Other'], true)));
         bh_require(!isset($h['farrierFeet']) || bh_text($h['farrierFeet']));
         bh_require(!isset($h['voided']) || is_bool($h['voided']));
+    }
+    $eventsById = array_column($d['events'], null, 'id'); $recordedVisits = [];
+    foreach ($d['history'] as $h) if (array_key_exists('sourceEventId', $h)) {
+        bh_require(bh_text($h['sourceEventId']));
+        $event = $eventsById[$h['sourceEventId']] ?? null;
+        bh_require($h['type'] === 'Farrier' && $event && $event['type'] === 'Farrier' && $event['horseId'] === $h['horseId'], 'A farrier record must match its planned horse visit.');
+        if (empty($h['voided'])) { bh_require(!isset($recordedVisits[$h['sourceEventId']]), 'This farrier visit already has a completed work record.'); $recordedVisits[$h['sourceEventId']] = true; }
     }
     foreach ($d['helpers'] as $h) { bh_fields($h, ['name','initials']); bh_require(trim($h['name']) !== ''); }
     foreach (['shifts','daysOff'] as $key) foreach ($d[$key] as $r) {

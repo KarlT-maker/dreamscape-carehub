@@ -1,4 +1,5 @@
 import type { WorkspaceData } from "./workspace";
+import type { CalendarEvent, HistoryEntry } from "../../types/index";
 export type PlanningSection = "events" | "history" | "helpers" | "shifts" | "daysOff";
 export type PlanningRecord<K extends PlanningSection> = WorkspaceData[K][number];
 
@@ -26,4 +27,12 @@ export function savePlanningRecord<K extends PlanningSection>(data: WorkspaceDat
     off.add(key);
   }
   return result;
+}
+
+export function recordFarrierVisit(data: WorkspaceData, record: HistoryEntry, plan: CalendarEvent): WorkspaceData {
+  const current = data.events.find(e=>e.id===plan.id);
+  if(JSON.stringify(current)!==JSON.stringify(plan)) throw new Error("This visit plan changed while the form was open. Close and reopen it to review the latest plan.");
+  if(plan.cancelled || plan.type!=="Farrier" || record.type!=="Farrier" || record.horseId!==plan.horseId || record.sourceEventId!==plan.id) throw new Error("This record does not match an active farrier visit.");
+  if(data.history.some(h=>h.id!==record.id&&h.sourceEventId===plan.id&&!h.voided)) throw new Error("Work for this horse's visit has already been recorded. Open the saved record to make a correction.");
+  return savePlanningRecord(data,"history",record);
 }

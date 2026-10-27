@@ -38,6 +38,15 @@ export function validateSnapshot(value: unknown): Snapshot {
   for (const entry of d.history) {
     if ((entry.farrierWork !== undefined && (entry.type !== "Farrier" || !["Trim", "Shoeing", "Reset / refit", "Shoe removal", "Other"].includes(entry.farrierWork))) || (entry.farrierFeet !== undefined && !isText(entry.farrierFeet)) || (entry.voided !== undefined && typeof entry.voided !== "boolean")) throw new Error("A farrier record is invalid.");
   }
+  for (const event of d.events) {
+    if((event.farrierWork!==undefined&&(event.type!=="Farrier"||!["Trim","Shoeing","Shoe removal","Other"].includes(event.farrierWork)))||(event.farrierFeet!==undefined&&!isText(event.farrierFeet))) throw new Error("A planned farrier visit is invalid.");
+  }
+  const recordedVisits=new Set<string>();
+  for(const record of d.history) if(record.sourceEventId!==undefined) {
+    const event=d.events.find(e=>e.id===record.sourceEventId);
+    if(!isText(record.sourceEventId)||record.type!=="Farrier"||!event||event.type!=="Farrier"||event.horseId!==record.horseId) throw new Error("A farrier record must match its planned horse visit.");
+    if(!record.voided){if(recordedVisits.has(record.sourceEventId))throw new Error("This farrier visit already has a completed work record.");recordedVisits.add(record.sourceEventId);}
+  }
   if (!s.completions || typeof s.completions !== "object" || Array.isArray(s.completions) || !Object.values(s.completions).every(c => c && isText(c.completedAt) && isText(c.completedBy))) throw new Error("Saved task checkmarks are invalid.");
   return s;
 }

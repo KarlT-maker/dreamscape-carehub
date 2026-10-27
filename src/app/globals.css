@@ -2120,3 +2120,29 @@ button:disabled { opacity: .55; cursor: wait; }
   .farrier-table tr { break-inside: avoid; }
   .farrier-table thead { display: table-header-group; }
 }
+.farrier-planned-count, .farrier-completed-count { font-size: 12px; font-weight: 700; border-radius: 4px; padding: 2px 5px; }
+.farrier-planned-count { background: #f6edda; color: #72521c; }
+.farrier-completed-count { background: #e0eee4; color: #214c35; }
+.farrier-row-actions { display: grid; gap: 10px; }
+.farrier-row-actions button { text-align: left; }
+.farrier-month-grid { margin-bottom: 0; }
+@media print {
+  .farrier-write-space { min-width: 145px; height: 22mm; }
+  .farrier-visit-table td { border: 1px solid #aab4ae; }
+  .farrier-visit-table { table-layout: fixed; }
+}
+.farrier-day-sheet { scroll-margin-top: 16px; }
+@media screen and (max-width:700px) {
+  .farrier-month-grid { grid-template-columns: repeat(7,minmax(0,1fr)); }
+  .farrier-weekdays { display: grid; font-size: 10px; }
+  .farrier-month-grid .crew-calendar-day { min-height: 72px; padding: 6px 3px; gap: 4px; }
+  .farrier-month-grid .outside-month { display: flex; }
+  .farrier-month-grid .crew-short-date { display: inline; }
+  .farrier-month-grid .crew-long-date, .farrier-calendar-horse { display: none; }
+  .farrier-planned-count, .farrier-completed-count { font-size: 9px; padding: 2px; }
+}
+@media screen and (max-width:700px) {
+  .farrier-day-sheet { scroll-margin-top: 230px; }
+  .farrier-day-sheet .panel-heading { flex-wrap: wrap; gap: 12px; }
+  .farrier-day-sheet .panel-heading > div { width: 100%; }
+}

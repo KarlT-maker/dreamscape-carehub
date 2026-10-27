@@ -66,3 +66,9 @@ reload, refresh in a second screen, conflicting edits, and reversible restore.
 The dedicated Farrier records page records completed work for one horse at a time, with Save & add next horse retaining the visit date and farrier. It uses the existing shared horse history, with optional work type, feet and entered-in-error fields; older unclassified records remain visible. Helpers can correct a record or mark it entered in error; records are never removed and the existing server audit retains previous revisions. The server stamps the signed-in account on changes.
 
 Weekly reports use ISO Monday-Sunday weeks, including the ISO week-year around New Year, and show date ranges beside the year/week. Counts exclude entries marked entered in error, count work entries rather than individual shoes, and can be filtered by farrier. Print week produces a paper/PDF-friendly report.
+
+## Planned farrier visits and actual work
+
+Farrier records now opens to a monthly calendar. Selecting a date shows the horses planned for that date alongside their recorded actual work, including completed work entered without a prior plan. Plan a horse adds an ordinary Farrier calendar event, so it also appears in the main Calendar and horse appointments. Print this day hides the month grid and prints the day's visit sheet with proposed work, notes for Shelly, and space for the actual work.
+
+Completed work remains in horse history and the weekly Work records view. Recording a planned visit links a history entry to its source event without overwriting the proposal. Stale plans and duplicate active completions are rejected; voiding an incorrect completion allows a corrected entry. Cancelled plans are retained and excluded from visit sheets. Removed work-menu choices do not erase legacy recorded work.
