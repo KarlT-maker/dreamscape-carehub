@@ -40,8 +40,10 @@ assignments and days off can be cancelled instead of deleted. Tasks are read-onl
 and task check-off controls are hidden; existing completion data is preserved.
 Lunch and all combinations of AM, Lunch and PM are supported. History authors
 are stamped with the signed-in account by the server. Helper names in the rota
-do not create accounts or send email. Duplicate active assignments and days off
-are rejected. Bulk replacement and undo still require administrator permission.
+do not create accounts or send email. Several helpers can share a paddock and
+round; each has a separate assignment. Removing one preserves the others.
+Duplicate assignments for the same helper, paddock, date and round, and duplicate
+days off, are rejected. Bulk replacement and undo still require administrator permission.
 This beta requires internet; offline queuing, client access and photos are not
 implemented. Calendar appointments and horse history are entered by the team;
 they do not import data from external vet or farrier services.

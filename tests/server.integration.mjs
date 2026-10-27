@@ -84,6 +84,18 @@ try {
   saved=r.value.snapshot;next=structuredClone(saved);next.data.events[0].cancelled=false;next.data.events[0].time='13:00';next.data.shifts[0].cancelled=false;next.data.history[0].detail='Corrected record';
   r=await call('save',{role:'owner',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});check(r.status===200 && r.value.snapshot.data.events[0].time==='13:00' && !r.value.snapshot.data.shifts[0].cancelled,'owner can edit and reinstate appointments and assignments');
   assert.deepEqual(r.value.snapshot.data.care,saved.data.care);check(true,'planning changes preserve all care instructions');
+  saved=r.value.snapshot;next=structuredClone(saved);
+  next.data.helpers.push({id:'helper2',name:'Second helper',initials:'SH'});
+  next.data.shifts.push({...next.data.shifts[0],id:'shift2',helperId:'helper2'});
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});
+  check(r.status===200 && r.value.snapshot.data.shifts.filter(s=>!s.cancelled).length===2,'two helpers can save assignments to the same paddock and round');
+  saved=r.value.snapshot;next=structuredClone(saved);next.data.shifts[0].cancelled=true;
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});
+  check(r.status===200 && r.value.snapshot.data.shifts[1].helperId==='helper2' && !r.value.snapshot.data.shifts[1].cancelled,'removing one helper preserves their teammate');
+  saved=r.value.snapshot;
+  r=await call('workspace',{role:'owner'});assert.deepEqual(r.value.snapshot.data.shifts,saved.data.shifts);check(true,'a separate screen reads the saved team assignments');
+  next=structuredClone(saved);next.data.shifts.push({...next.data.shifts[1],id:'duplicate-helper'});
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});check(r.status===422,'the same helper cannot be duplicated within a team');
   console.log(`${checks} HTTP integration checks passed against the PHP API with a local WordPress/SQLite fixture.`);
 }catch(e){console.error(logs.slice(-5000));throw e;}
 finally{server.kill();}

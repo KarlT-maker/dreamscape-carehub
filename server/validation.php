@@ -90,7 +90,7 @@ function bh_authorize_change(array $old, array $next, bool $admin, bool $replace
         $slots = [];
         foreach ($next['data'][$key] as $r) {
             if (!empty($r['cancelled'])) continue;
-            $slot = json_encode($key === 'shifts' ? [$r['date'],$r['paddock'],$r['period']] : [$r['date'],$r['helperId']]);
+            $slot = json_encode($key === 'shifts' ? [$r['date'],$r['paddock'],$r['period'],$r['helperId']] : [$r['date'],$r['helperId']]);
             bh_require(!isset($slots[$slot]), 'That assignment or day off is already recorded. Refresh the schedule.');
             $slots[$slot] = true;
         }

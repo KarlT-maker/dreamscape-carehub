@@ -63,11 +63,8 @@ export function FullBoard() {
   const helperName = (id?: string) =>
     helpers.find((h) => h.id === id)?.name ?? "—";
   const onShift = (paddock: string, period: Round) =>
-    helperName(
-      shifts.find(
-        (s) => !s.cancelled && s.date === today && s.paddock === paddock && s.period === period,
-      )?.helperId,
-    );
+    shifts.filter(s => !s.cancelled && s.date === today && s.paddock === paddock && s.period === period)
+      .map(s => helperName(s.helperId)).join(", ") || "—";
 
   const offToday = daysOff
     .filter((d) => !d.cancelled && d.date === today)

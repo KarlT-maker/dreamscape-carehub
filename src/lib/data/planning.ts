@@ -15,8 +15,8 @@ export function savePlanningRecord<K extends PlanningSection>(data: WorkspaceDat
   const result = {...data, [section]: current ? rows.map(row => row.id === next.id ? next : row) : [...rows, next]};
   const slots = new Set<string>();
   for (const shift of result.shifts.filter(s => !s.cancelled)) {
-    const key = JSON.stringify([shift.date, shift.paddock, shift.period]);
-    if (slots.has(key)) throw new Error("That paddock and round already have an assignment. Reopen the schedule to see it.");
+    const key = JSON.stringify([shift.date, shift.paddock, shift.period, shift.helperId]);
+    if (slots.has(key)) throw new Error("That helper is already assigned to this paddock and round. Reopen the schedule to see it.");
     slots.add(key);
   }
   const off = new Set<string>();

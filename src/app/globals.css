@@ -11,6 +11,12 @@
 .schedule-table thead { background: #e7eee9; font-size: 13px; }
 .schedule-table th:first-child { min-width: 145px; }
 .schedule-table select { width: 100%; min-width: 140px; }
+.schedule-table td { vertical-align: top; }
+.schedule-team { display: grid; gap: 6px; margin-bottom: 8px; }
+.schedule-person { display: flex; align-items: center; justify-content: space-between; gap: 6px; background: #e7eee9; border-radius: 6px; padding: 4px 6px 4px 10px; }
+.schedule-person > span { overflow-wrap: anywhere; }
+.schedule-remove { min-width: 32px; min-height: 36px; border: 0; border-radius: 4px; background: transparent; color: var(--green); font-size: 22px; }
+.schedule-remove:hover { background: #d3e0d7; }
 .schedule-today { background: #eff4ed; }
 .schedule-warning { display: block; color: #8a3324; }
 .day-off-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 8px 0; }
@@ -1870,6 +1876,7 @@ body.wall-mode .crew-off-week {
 }
 .fb-paddock-head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
@@ -1888,7 +1895,9 @@ body.wall-mode .crew-off-week {
 }
 .fb-crew {
   font-size: 11.5px;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 .fb-crew b {
   opacity: 0.7;

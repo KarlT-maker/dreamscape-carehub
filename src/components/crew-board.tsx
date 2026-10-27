@@ -7,7 +7,7 @@ import { PADDOCKS } from "@/lib/data/roster";
 import { ROUNDS } from "@/lib/schedules";
 import { Empty, PageHeader } from "./ui";
 import { RecordForm } from "./record-form";
-import type { Helper, DayOff, Round } from "@/types";
+import type { Helper, DayOff, Round, ShiftAssignment } from "@/types";
 function monday(date:string) { return offsetDate(date,-((new Date(date+"T12:00:00Z").getUTCDay()+6)%7)); }
 function HelperForm({existing:initial,onClose}:{existing?:Helper;onClose:()=>void}) {
   const {savePlanning}=useBarn();
@@ -35,17 +35,21 @@ export function CrewBoard() {
   const [editingOff,setEditingOff]=useState<DayOff|"new"|null>(null);
   const [message,setMessage]=useState("");
   const dates=Array.from({length:7},(_,i)=>offsetDate(week,i));
-  const on=(date:string,paddock:string)=>shifts.find(s=>!s.cancelled&&s.date===date&&s.paddock===paddock&&s.period===round);
+  const on=(date:string,paddock:string)=>shifts.filter(s=>!s.cancelled&&s.date===date&&s.paddock===paddock&&s.period===round);
   const helperName=(id:string)=>helpers.find(h=>h.id===id)?.name??"Unknown helper";
   const isOff=(helperId:string,date:string)=>daysOff.some(d=>!d.cancelled&&d.helperId===helperId&&d.date===date);
-  const visible=paddockNames(horses,PADDOCKS).filter(p=>!search.trim()||p.toLowerCase().includes(search.trim().toLowerCase())||dates.some(date=>{const s=on(date,p);return s&&helperName(s.helperId).toLowerCase().includes(search.trim().toLowerCase());}));
+  const visible=paddockNames(horses,PADDOCKS).filter(p=>!search.trim()||p.toLowerCase().includes(search.trim().toLowerCase())||dates.some(date=>on(date,p).some(s=>helperName(s.helperId).toLowerCase().includes(search.trim().toLowerCase()))));
   const weekOff=daysOff.filter(d=>!d.cancelled&&d.date>=week&&d.date<=dates[6]).sort((a,b)=>a.date.localeCompare(b.date));
   async function assign(date:string,paddock:string,helperId:string) {
-    const before=on(date,paddock)??shifts.find(s=>s.date===date&&s.paddock===paddock&&s.period===round);
-    if (!helperId&&!before) return;
-    const next={...before,id:before?.id??crypto.randomUUID(),date,paddock,period:round,helperId:helperId||before!.helperId,cancelled:!helperId};
+    if (!helperId || on(date,paddock).some(s=>s.helperId===helperId)) return;
+    const before=shifts.find(s=>s.date===date&&s.paddock===paddock&&s.period===round&&s.helperId===helperId);
+    const next={...before,id:before?.id??crypto.randomUUID(),date,paddock,period:round,helperId,cancelled:false};
     setMessage("");
     if(await savePlanning("shifts",next,before)) setMessage("Assignment saved.");
+  }
+  async function unassign(shift:ShiftAssignment) {
+    setMessage("");
+    if(await savePlanning("shifts",{...shift,cancelled:true},shift)) setMessage("Helper removed from this round. Other helpers stay assigned.");
   }
   return <>
     <PageHeader eyebrow="BARN TEAM" title="Who's on what" description="Add helper names, then choose who covers each paddock during the week." action={<button className="button" onClick={()=>setEditingHelper("new")}>Add helper</button>}/>
@@ -61,9 +65,21 @@ export function CrewBoard() {
         <label>Round<select value={round} onChange={e=>setRound(e.target.value as Round)}>{ROUNDS.map(r=><option key={r}>{r}</option>)}</select></label>
         <label>Find paddock or helper<input value={search} onChange={e=>setSearch(e.target.value)}/></label>
       </div>
-      <p className="padded muted">Each selection saves online. Choose Unassigned to clear a cell. Switch Round to plan AM, Lunch or PM.</p>
+      <p className="padded muted">Choose Add helper in a cell to assign one or more people together. Use × beside a name to remove only that person. Each change saves online. Switch Round to plan AM, Lunch or PM.</p>
       {!helpers.length ? <Empty>Choose Add helper above to start the weekly schedule.</Empty> : <div className="schedule-scroll"><table className="schedule-table"><thead><tr><th scope="col">Paddock</th>{dates.map(date=><th scope="col" key={date}>{dateLabel(date,{weekday:"short",month:"short",day:"numeric"})}</th>)}</tr></thead><tbody>
-        {visible.map(paddock=><tr key={paddock}><th scope="row">{paddock}</th>{dates.map(date=>{const shift=on(date,paddock);return <td key={date} className={date===today?"schedule-today":undefined}><select aria-label={paddock+" · "+date+" · "+round} value={shift?.helperId??""} disabled={saving||uncertain} onChange={e=>void assign(date,paddock,e.target.value)}><option value="">Unassigned</option>{helpers.map(h=><option key={h.id} value={h.id} disabled={isOff(h.id,date)&&h.id!==shift?.helperId}>{h.name}{isOff(h.id,date)?" (day off)":""}</option>)}</select>{shift&&isOff(shift.helperId,date)&&<small className="schedule-warning">Day off — review cover</small>}</td>;})}</tr>)}
+        {visible.map(paddock=><tr key={paddock}><th scope="row">{paddock}</th>{dates.map(date=>{
+          const team=on(date,paddock);
+          const available=helpers.filter(h=>!team.some(s=>s.helperId===h.id));
+          return <td key={date} className={date===today?"schedule-today":undefined}>
+            <div className="schedule-team">{team.length ? team.map(shift=><div className="schedule-person" key={shift.id}>
+              <span>{helperName(shift.helperId)}{isOff(shift.helperId,date)&&<small className="schedule-warning">Day off — review cover</small>}</span>
+              <button type="button" className="schedule-remove" disabled={saving||uncertain} aria-label={`Remove ${helperName(shift.helperId)} from ${paddock} · ${date} · ${round}`} onClick={()=>void unassign(shift)}>×</button>
+            </div>):<span className="muted">Unassigned</span>}</div>
+            <select aria-label={`Add helper · ${paddock} · ${date} · ${round}`} value="" disabled={saving||uncertain||!available.some(h=>!isOff(h.id,date))} onChange={e=>void assign(date,paddock,e.target.value)}>
+              <option value="">Add helper…</option>{available.map(h=><option key={h.id} value={h.id} disabled={isOff(h.id,date)}>{h.name}{isOff(h.id,date)?" (day off)":""}</option>)}
+            </select>
+          </td>;
+        })}</tr>)}
       </tbody></table></div>}
       <p className="padded" role="status">{message}</p>
     </section>
