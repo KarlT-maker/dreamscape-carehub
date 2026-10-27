@@ -54,6 +54,36 @@ try {
   r=await call('undo',{role:'owner',body:{revision:6,requestId:crypto.randomUUID()}});check(r.status===200 && r.value.snapshot.revision===7,'CareHub owners can undo a restore');
   r=await call('initialize',{role:'owner',body:{}});check(r.status===403,'CareHub owners cannot change the website role or database setup');
   r=await call('initialize',{body:{}});check(r.status===200 && r.value.snapshot.revision===7 && r.value.snapshot.completions.task.completedBy==='Test helper','enabling owner roles again preserves all saved barn records');
+  saved=r.value.snapshot;
+  const horseId=saved.data.horses[0].id;
+  next=structuredClone(saved);
+  next.data.care.push({id:'lunch-feed',horseId,kind:'supplement',name:'Test supplement',quantity:'Test amount',schedule:'AM & Lunch & PM',instructions:'Test only',effectiveStart:'2026-10-27'});
+  next.data.helpers.push({id:'helper1',name:'Test helper',initials:'TH'});
+  next.data.events.push({id:'event1',horseId,date:'2026-10-28',time:'12:30',type:'Farrier',provider:'Test provider',reason:'Trim',notes:''});
+  next.data.history.push({id:'history1',horseId,date:'2026-10-27',type:'Vet',provider:'Test vet',title:'Visit',detail:'Test record',author:'Spoofed actor'});
+  next.data.shifts.push({id:'shift1',date:'2026-10-28',period:'Lunch',paddock:'Test field',helperId:'helper1'});
+  next.data.daysOff.push({id:'off1',date:'2026-10-29',helperId:'helper1',note:'Test only'});
+  body={revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next};
+  r=await call('save',{role:'tester',body});check(r.status===200,'tester can save appointments, history, helper names, Lunch assignments and days off');
+  saved=r.value.snapshot;check(saved.data.history[0].author==='Test helper','history author comes from the signed-in account');
+  assert.deepEqual(saved.data.horses,original.data.horses.map((h,i)=>i===0?{...h,specialInstructions:'HTTP integration test'}:h));
+  check(saved.data.care[0].schedule==='AM & Lunch & PM','Lunch care is preserved by the server');
+  r=await call('workspace',{role:'owner'});assert.deepEqual(r.value.snapshot.data,saved.data);check(r.status===200,'a separate account sees all newly saved planning records');
+  r=await call('save',{role:'tester',body});check(r.status===200 && r.value.snapshot.revision===saved.revision,'repeated planning save is not duplicated');
+  r=await call('save',{role:'tester',body:{...body,requestId:crypto.randomUUID()}});check(r.status===409,'a stale planning save cannot overwrite a newer revision');
+  for(const section of ['events','history','helpers','shifts','daysOff']){
+    next=structuredClone(saved);next.data[section]=[];
+    r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});check(r.status===422,`existing ${section} records cannot be deleted by a normal save`);
+  }
+  next=structuredClone(saved);next.data.shifts.push({...next.data.shifts[0],id:'duplicate-shift'});
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});check(r.status===422,'duplicate active rota slot is rejected');
+  next=structuredClone(saved);next.data.events[0].time='25:00';
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});check(r.status===422,'invalid appointment time is rejected without losing saved data');
+  next=structuredClone(saved);next.data.events[0].cancelled=true;next.data.shifts[0].cancelled=true;next.data.daysOff[0].cancelled=true;
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});check(r.status===200 && r.value.snapshot.data.events[0].cancelled,'cancelled records remain saved');
+  saved=r.value.snapshot;next=structuredClone(saved);next.data.events[0].cancelled=false;next.data.events[0].time='13:00';next.data.shifts[0].cancelled=false;next.data.history[0].detail='Corrected record';
+  r=await call('save',{role:'owner',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});check(r.status===200 && r.value.snapshot.data.events[0].time==='13:00' && !r.value.snapshot.data.shifts[0].cancelled,'owner can edit and reinstate appointments and assignments');
+  assert.deepEqual(r.value.snapshot.data.care,saved.data.care);check(true,'planning changes preserve all care instructions');
   console.log(`${checks} HTTP integration checks passed against the PHP API with a local WordPress/SQLite fixture.`);
 }catch(e){console.error(logs.slice(-5000));throw e;}
 finally{server.kill();}

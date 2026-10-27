@@ -30,7 +30,7 @@ export default function Page() {
         catch { setError("That file is not a valid BarnCareHub backup. Your current records have not changed."); }
       }} /></label>}</div>
     </div></section>
-    {shared && isAdmin && <section className="panel"><div className="panel-heading"><h2>Staff access</h2></div><p className="padded">Each person uses their own account. <strong>BarnCareHub testers</strong> can edit horses and care and use the checklists. <strong>BarnCareHub administrators</strong> can also reset or restore shared records. These roles do not give control of the public website. {canManageAccounts ? <a href="/wp-admin/user-new.php" target="_blank" rel="noreferrer">Open website Users to manage accounts</a> : "Adding or changing accounts currently requires the separate website administrator login."}</p></section>}
+    {shared && isAdmin && <section className="panel"><div className="panel-heading"><h2>Staff access</h2></div><p className="padded">Each person uses their own account. <strong>BarnCareHub testers</strong> can edit horses, care, appointments, history and the helper schedule. <strong>BarnCareHub administrators</strong> can also reset or restore shared records. These roles do not give control of the public website. {canManageAccounts ? <a href="/wp-admin/user-new.php" target="_blank" rel="noreferrer">Open website Users to manage accounts</a> : "Adding or changing accounts currently requires the separate website administrator login."}</p></section>}
     {isAdmin && <section className="panel"><div className="panel-heading"><h2>{shared ? "Clear or restore shared records" : "Clear or restore the practice workspace"}</h2></div><div className="padded">
       <p>Keep horse names and paddocks while clearing other profile details, care plans, appointments, history, crew and checkmarks. The previous workspace is kept so you can undo the last reset or restore.</p>
       <div className="workspace-actions">
@@ -51,6 +51,6 @@ export default function Page() {
       </div>}
       <p role="status">{message}</p>{error && <p role="alert" className="workspace-error">{error}</p>}
     </div></section>}
-    <section className="panel"><div className="panel-heading"><h2>Still to come</h2></div><p className="padded">Offline uploads, appointment entry, crew scheduling, photos and client access are not connected yet. For now, you can edit horse profiles, enter and change care plans, and use the feed boards and daily checklists.{shared ? " An internet connection is needed to save." : " Shared staff accounts are available in the online beta once set up."}</p></section>
+    <section className="panel"><div className="panel-heading"><h2>Still to come</h2></div><p className="padded">Offline uploads, photos and client access are not connected yet. You can edit horse profiles and care plans, add appointments and history, plan the helper schedule, and use the feed boards.{shared ? " An internet connection is needed to save." : " Shared staff accounts are available in the online beta once set up."}</p></section>
   </>;
 }

@@ -34,10 +34,17 @@ compare their original record before overwriting it. Each successful write
 records the previous snapshot, user ID, time, action and request ID in the
 revision table. Admin resets/restores also retain a one-step undo snapshot.
 
-Normal staff saves allow horses, care and checkmarks only, retain existing horse
-and care IDs, and validate all relationships. Bulk replacement and undo require
-administrator permission. This beta requires internet; offline queuing, client
-access and photos are not implemented. Appointments/crew entry remain future work.
+Normal staff saves allow horse profiles, care, appointments, history, helper names,
+weekly assignments and days off. Existing record IDs are retained; appointments,
+assignments and days off can be cancelled instead of deleted. Tasks are read-only
+and task check-off controls are hidden; existing completion data is preserved.
+Lunch and all combinations of AM, Lunch and PM are supported. History authors
+are stamped with the signed-in account by the server. Helper names in the rota
+do not create accounts or send email. Duplicate active assignments and days off
+are rejected. Bulk replacement and undo still require administrator permission.
+This beta requires internet; offline queuing, client access and photos are not
+implemented. Calendar appointments and horse history are entered by the team;
+they do not import data from external vet or farrier services.
 
 The GitHub Pages build remains browser-local. It must not automatically upload
 or erase existing local records. Import a downloaded browser backup explicitly

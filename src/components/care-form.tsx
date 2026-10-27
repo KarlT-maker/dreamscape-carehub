@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { dateLabel, offsetDate } from "@/lib/dates";
 import type { CareInstruction } from "@/types";
 import { useBarn, type CareDraft } from "./provider";
+import { SCHEDULES } from "@/lib/schedules";
 
 const KIND_LABEL = {
   medication: "medication",
@@ -120,9 +121,7 @@ export function CareForm({
               set("schedule", e.target.value as CareDraft["schedule"])
             }
           >
-            <option>AM &amp; PM</option>
-            <option>AM</option>
-            <option>PM</option>
+            {SCHEDULES.map(schedule=><option key={schedule}>{schedule}</option>)}
           </select>
         </label>
 

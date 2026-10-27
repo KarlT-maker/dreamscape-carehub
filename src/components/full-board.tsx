@@ -7,7 +7,7 @@ import { useBarn } from "./provider";
 import { dateLabel, instructionState, offsetDate } from "@/lib/dates";
 import { horsePath } from "@/lib/horse-path";
 import { PADDOCKS, PADDOCK_ALIASES } from "@/lib/data/roster";
-import type { CareInstruction } from "@/types";
+import type { CareInstruction, Round } from "@/types";
 
 /**
  * The whole feed room on one screen, the way the physical whiteboards read:
@@ -62,15 +62,15 @@ export function FullBoard() {
 
   const helperName = (id?: string) =>
     helpers.find((h) => h.id === id)?.name ?? "—";
-  const onShift = (paddock: string, period: "AM" | "PM") =>
+  const onShift = (paddock: string, period: Round) =>
     helperName(
       shifts.find(
-        (s) => s.date === today && s.paddock === paddock && s.period === period,
+        (s) => !s.cancelled && s.date === today && s.paddock === paddock && s.period === period,
       )?.helperId,
     );
 
   const offToday = daysOff
-    .filter((d) => d.date === today)
+    .filter((d) => !d.cancelled && d.date === today)
     .map((d) => helperName(d.helperId));
 
   const weekEnd = offsetDate(today, 7);
@@ -145,7 +145,7 @@ export function FullBoard() {
                   )}
                 </h2>
                 <span className="fb-crew">
-                  <b>AM</b> {onShift(paddock, "AM")} <b>PM</b>{" "}
+                  <b>AM</b> {onShift(paddock, "AM")} <b>Lunch</b> {onShift(paddock, "Lunch")} <b>PM</b>{" "}
                   {onShift(paddock, "PM")}
                 </span>
               </div>

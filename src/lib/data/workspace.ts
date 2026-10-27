@@ -24,13 +24,17 @@ export function validateSnapshot(value: unknown): Snapshot {
   const horses = new Set(d.horses.map(h => h.id));
   const helpers = new Set(d.helpers.map(h => h.id));
   for (const h of d.horses) if (![h.name, h.breed, h.colour, h.location, h.specialInstructions, h.owner?.id, h.owner?.name].every(isText) || !h.name.trim() || !h.location.trim() || (h.birthDate !== "" && !isDate(h.birthDate)) || (h.arrivalDate !== "" && !isDate(h.arrivalDate)) || !["", "Mare", "Gelding", "Stallion"].includes(h.sex) || !["Active", "Away", "Archived"].includes(h.status) || (h.registeredName !== undefined && !isText(h.registeredName))) throw new Error("A horse profile in the backup is incomplete.");
-  for (const c of d.care) if (!horses.has(c.horseId) || !["feed", "medication", "supplement"].includes(c.kind) || !["AM", "PM", "AM & PM"].includes(c.schedule) || ![c.name, c.instructions, "dose" in c ? c.dose : c.quantity].every(isText) || !isDate(c.effectiveStart) || (c.effectiveEnd !== undefined && !isDate(c.effectiveEnd))) throw new Error("A care instruction in the backup is invalid.");
+  for (const c of d.care) if (!horses.has(c.horseId) || !["feed", "medication", "supplement"].includes(c.kind) || !["AM", "Lunch", "PM", "AM & PM", "AM & Lunch", "Lunch & PM", "AM & Lunch & PM"].includes(c.schedule) || ![c.name, c.instructions, "dose" in c ? c.dose : c.quantity].every(isText) || !isDate(c.effectiveStart) || (c.effectiveEnd !== undefined && !isDate(c.effectiveEnd))) throw new Error("A care instruction in the backup is invalid.");
   for (const e of d.events) if (!horses.has(e.horseId) || !isDate(e.date) || ![e.type, e.time, e.provider, e.reason, e.notes].every(isText)) throw new Error("An appointment in the backup is invalid.");
-  for (const h of d.history) if (!horses.has(h.horseId) || !isDate(h.date) || ![h.title, h.detail, h.author, h.type].every(isText)) throw new Error("A history entry in the backup is invalid.");
+  for (const h of d.history) if (!horses.has(h.horseId) || !isDate(h.date) || ![h.title, h.detail, h.author, h.type].every(isText) || (h.provider !== undefined && !isText(h.provider))) throw new Error("A history entry in the backup is invalid.");
   for (const t of d.tasks) if (!horses.has(t.horseId) || !isDate(t.date) || ![t.category, t.period, t.title, t.detail].every(isText)) throw new Error("A task in the backup is invalid.");
   for (const h of d.helpers) if (![h.name, h.initials].every(isText)) throw new Error("A helper in the backup is invalid.");
-  for (const shift of d.shifts) if (!helpers.has(shift.helperId) || !isDate(shift.date) || !isText(shift.paddock) || !["AM", "PM"].includes(shift.period)) throw new Error("A shift in the backup is invalid.");
+  for (const shift of d.shifts) if (!helpers.has(shift.helperId) || !isDate(shift.date) || !isText(shift.paddock) || !["AM", "Lunch", "PM"].includes(shift.period)) throw new Error("A shift in the backup is invalid.");
   for (const off of d.daysOff) if (!helpers.has(off.helperId) || !isDate(off.date) || (off.note !== undefined && !isText(off.note))) throw new Error("A day off in the backup is invalid.");
+  for (const row of [...d.events, ...d.shifts, ...d.daysOff]) if (row.cancelled !== undefined && typeof row.cancelled !== "boolean") throw new Error("A cancelled record in the backup is invalid.");
+  for (const event of d.events) if (!["Vet", "Farrier", "Dentist", "Medication change", "Feed change", "Vaccination", "Deworming", "Weight check", "Other"].includes(event.type) || (event.time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(event.time))) throw new Error("An appointment type or time is invalid.");
+  for (const helper of d.helpers) if (!helper.name.trim()) throw new Error("Enter the helper's name.");
+  for (const entry of d.history) if (!["Vet", "Farrier", "Medication", "Feed", "Weight", "Notes", "Photo"].includes(entry.type)) throw new Error("A history record type is invalid.");
   if (!s.completions || typeof s.completions !== "object" || Array.isArray(s.completions) || !Object.values(s.completions).every(c => c && isText(c.completedAt) && isText(c.completedBy))) throw new Error("Saved task checkmarks are invalid.");
   return s;
 }
@@ -53,8 +57,8 @@ export function saveWorkspace(storage: Store, current: Snapshot, next: Snapshot,
 export function dailyTasks(data: WorkspaceData, today: string): CareTask[] {
   return data.horses.filter(h => h.status === "Active").flatMap(h => {
     const tasks: CareTask[] = [];
-    for (const period of ["AM", "PM"] as const) {
-      const feed = data.care.filter(c => c.horseId === h.id && c.kind !== "medication" && c.effectiveStart <= today && (!c.effectiveEnd || c.effectiveEnd >= today) && (c.schedule === period || c.schedule === "AM & PM"));
+    for (const period of ["AM", "Lunch", "PM"] as const) {
+      const feed = data.care.filter(c => c.horseId === h.id && c.kind !== "medication" && c.effectiveStart <= today && (!c.effectiveEnd || c.effectiveEnd >= today) && c.schedule.split(" & ").includes(period));
       if (feed.length) tasks.push({ id: `${today}-${h.id}-feed-${period}-${JSON.stringify(feed.map(c => [c.id, c.name, "quantity" in c ? c.quantity : "", c.schedule, c.instructions]).sort())}`, horseId: h.id, date: today, category: "Feed", period, title: feed.map(c => c.name).join(" + "), detail: feed.map(c => `${"quantity" in c ? c.quantity : ""} · ${c.instructions}`).join("; ") });
     }
     if (h.specialInstructions) tasks.push({ id: `${today}-${h.id}-special-${h.specialInstructions}`, horseId: h.id, date: today, category: "Special care", period: "AM", title: "Special instruction", detail: h.specialInstructions });

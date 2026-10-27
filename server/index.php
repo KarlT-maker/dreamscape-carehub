@@ -90,6 +90,13 @@ try {
     } else $next = bh_decode(wp_json_encode(json_decode($raw, false, 64, JSON_THROW_ON_ERROR)->snapshot ?? null));
     bh_authorize_change($old, $next, $admin, $action !== 'save');
     $next['revision'] = $old['revision'] + 1; $next['savedAt'] = gmdate('c');
+    if ($action === 'save') {
+        $oldHistory = array_column($old['data']['history'], null, 'id');
+        foreach ($next['data']['history'] as &$entry) {
+            if (($oldHistory[$entry['id']] ?? null) !== $entry) $entry['author'] = wp_get_current_user()->display_name;
+        }
+        unset($entry);
+    }
     if ($action === 'save') foreach ($next['completions'] as $id=>$completion) {
         if (!isset($old['completions']->$id) || $old['completions']->$id != $completion) {
             $completion->completedBy = wp_get_current_user()->display_name; $completion->completedAt = gmdate('c');

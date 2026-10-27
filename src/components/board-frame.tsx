@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Maximize2, Minimize2, Search } from "lucide-react";
 import { dateLabel } from "@/lib/dates";
 import { useBarn } from "./provider";
+import type { Round } from "@/types";
 
 /**
  * Wall display mode. The feed room screen is read from across the room, so it
@@ -26,7 +27,7 @@ function useWallMode() {
 
 export type BoardFilters = {
   search: string;
-  period: "All" | "AM" | "PM";
+  period: "All" | Round;
 };
 
 export function BoardFrame({
@@ -37,6 +38,7 @@ export function BoardFrame({
   countLabel,
   searchPlaceholder,
   showPeriod = true,
+  controls,
   children,
 }: {
   eyebrow: string;
@@ -46,6 +48,7 @@ export function BoardFrame({
   countLabel?: string;
   searchPlaceholder: string;
   showPeriod?: boolean;
+  controls?: React.ReactNode;
   children: (filters: BoardFilters) => React.ReactNode;
 }) {
   const { today } = useBarn();
@@ -93,12 +96,14 @@ export function BoardFrame({
               value={period}
               onChange={(e) => setPeriod(e.target.value as BoardFilters["period"])}
             >
-              <option value="All">AM &amp; PM</option>
+              <option value="All">All rounds</option>
               <option value="AM">AM only</option>
+              <option value="Lunch">Lunch only</option>
               <option value="PM">PM only</option>
             </select>
           </label>
         )}
+        {controls}
         {count !== undefined && (
           <span className="muted board-count">
             {count} {countLabel}

@@ -8,6 +8,7 @@ import { EventList } from "./event-list";
 import { HorseForm } from "./horse-form";
 import { CarePlan } from "./care-plan";
 import { History } from "./history";
+import { Calendar } from "./calendar";
 import { age, dateLabel, instructionState } from "@/lib/dates";
 const tabs = ["Overview", "Care", "Calendar", "History", "Photos", "Documents"];
 export function HorseProfile({
@@ -167,7 +168,8 @@ export function HorseProfile({
                 </div>
                 <EventList
                   events={events
-                    .filter((e) => e.horseId === id && e.date >= today)
+                    .filter((e) => !e.cancelled && e.horseId === id && e.date >= today)
+                    .sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))
                     .slice(0, 3)}
                 />
               </section>
@@ -198,11 +200,7 @@ export function HorseProfile({
           </div>
         )}
         {tab === "Care" && <CarePlan horseId={id} />}
-        {tab === "Calendar" && (
-          <section className="panel">
-            <EventList events={events.filter((e) => e.horseId === id)} />
-          </section>
-        )}
+        {tab === "Calendar" && <Calendar horseId={id} />}
         {tab === "History" && (
           <History horseId={id} initialFilter={historyFilter} />
         )}

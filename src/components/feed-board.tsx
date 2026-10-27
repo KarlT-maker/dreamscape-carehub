@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { useState } from "react";
+import { includesRound } from "@/lib/schedules";
 import { paddockNames } from "@/lib/data/workspace";
 import { useBarn } from "./provider";
 import { instructionState } from "@/lib/dates";
@@ -13,6 +15,7 @@ import { Empty } from "./ui";
  * grouped by paddock so a full round can be carried out in one trip.
  */
 export function FeedBoard() {
+  const [kind,setKind] = useState("All");
   const { horses, care, today } = useBarn();
 
   const rows = horses
@@ -37,7 +40,8 @@ export function FeedBoard() {
       subtitle="Everything to be made up today, by paddock."
       count={total}
       countLabel="feed lines"
-      searchPlaceholder="Find a horse or paddock…"
+      searchPlaceholder="Find a horse, paddock, feed or supplement…"
+      controls={<label>Show<select value={kind} onChange={e=>setKind(e.target.value)}><option value="All">Feed and supplements</option><option value="feed">Feed / mash only</option><option value="supplement">Supplements only</option></select></label>}
     >
       {({ search, period }: BoardFilters) => {
         const term = search.trim().toLowerCase();
@@ -46,9 +50,8 @@ export function FeedBoard() {
             ...row,
             items: row.items.filter(
               (c) =>
-                period === "All" ||
-                c.schedule === period ||
-                c.schedule === "AM & PM",
+                includesRound(c.schedule,period) && (kind === "All" || c.kind === kind) &&
+                (!term || row.horse.name.toLowerCase().includes(term) || row.horse.location.toLowerCase().includes(term) || c.name.toLowerCase().includes(term)),
             ),
           }))
           .filter((row) => row.items.length > 0)
@@ -56,7 +59,8 @@ export function FeedBoard() {
             (row) =>
               !term ||
               row.horse.name.toLowerCase().includes(term) ||
-              row.horse.location.toLowerCase().includes(term),
+              row.horse.location.toLowerCase().includes(term) ||
+              row.items.some(c=>c.name.toLowerCase().includes(term)),
           );
 
         if (!visible.length)

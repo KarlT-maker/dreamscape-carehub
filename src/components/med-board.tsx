@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { includesRound } from "@/lib/schedules";
 import { paddockNames } from "@/lib/data/workspace";
 import { useBarn } from "./provider";
 import { dateLabel, instructionState } from "@/lib/dates";
@@ -47,10 +48,9 @@ export function MedBoard() {
             ...row,
             current: row.current.filter(
               (c) =>
-                period === "All" ||
-                c.schedule === period ||
-                c.schedule === "AM & PM",
+                includesRound(c.schedule,period),
             ),
+            scheduled: row.scheduled.filter(c=>includesRound(c.schedule,period)),
           }))
           .filter((row) => row.current.length || row.scheduled.length)
           .filter(

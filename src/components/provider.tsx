@@ -5,6 +5,7 @@ import { offsetDate, ranchDate } from "@/lib/dates";
 import { dailyTasks, emptyData, emptySnapshot, readWorkspace, saveWorkspace, validateSnapshot, STORAGE_KEY, UNDO_KEY, type Snapshot } from "@/lib/data/workspace";
 import type { CareInstruction, Horse, TaskCompletion } from "@/types";
 import { sharedRequest, SharedError, type SharedSession, type SharedWorkspace } from "@/lib/shared";
+import { savePlanningRecord, type PlanningRecord, type PlanningSection } from "@/lib/data/planning";
 
 type Data = ReturnType<typeof careRepository.load>;
 
@@ -43,6 +44,7 @@ type Context = Data & {
   uncertain: boolean;
   retrySave: () => Promise<boolean>;
   logout: () => Promise<void>;
+  savePlanning: <K extends PlanningSection>(section: K, record: PlanningRecord<K>, before?: PlanningRecord<K>) => Promise<boolean>;
 };
 
 const BarnContext = createContext<Context | null>(null);
@@ -156,6 +158,10 @@ export function BarnProvider({
     } catch (error) { setStorageError(error instanceof Error ? error.message : "This browser could not save your change. Your previous records are unchanged."); return false; }
   }
   const changeData = (change: (data: Data) => Data) => commit({ ...current.current, data: change(current.current.data) });
+  async function savePlanning<K extends PlanningSection>(section: K, record: PlanningRecord<K>, before?: PlanningRecord<K>) {
+    try { return await changeData(data => savePlanningRecord(data, section, record, before)); }
+    catch (error) { setStorageError(error instanceof Error ? error.message : "This change could not be saved."); return false; }
+  }
 
   function resetWorkspace(mode: Snapshot["mode"]) {
     const data = mode === "examples" ? careRepository.load(today) : emptyData();
@@ -240,6 +246,7 @@ export function BarnProvider({
         today,
         completions,
         toggleTask,
+        savePlanning,
         addHorse: (horse) => current.current.data.horses.some(h => h.id === horse.id) ? Promise.resolve(true) : changeData((prev) => ({ ...prev, horses: [...prev.horses, horse] })),
         updateHorse: (horse, before) => stale(before, current.current.data.horses.find(h => h.id === horse.id)) ? Promise.resolve(false) : changeData((prev) => ({ ...prev, horses: prev.horses.map(h => h.id === horse.id ? horse : h) })),
         addCare,

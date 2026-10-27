@@ -1,4 +1,20 @@
 @import "tailwindcss";
+.record-form fieldset { border: 0; padding: 0; min-width: 0; }
+.record-wide { grid-column: 1 / -1; }
+.record-form textarea { width: 100%; resize: vertical; }
+.helper-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.schedule-toolbar { flex-wrap: wrap; align-items: end; }
+.schedule-toolbar label { display: grid; gap: 5px; }
+.schedule-scroll { overflow-x: auto; padding: 0 16px 12px; }
+.schedule-table { border-collapse: collapse; width: 100%; min-width: 1050px; text-align: left; }
+.schedule-table th, .schedule-table td { padding: 12px 8px; border-bottom: 1px solid #dce3dd; }
+.schedule-table thead { background: #e7eee9; font-size: 13px; }
+.schedule-table th:first-child { min-width: 145px; }
+.schedule-table select { width: 100%; min-width: 140px; }
+.schedule-today { background: #eff4ed; }
+.schedule-warning { display: block; color: #8a3324; }
+.day-off-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 8px 0; }
+.task-row.care-summary-row { grid-template-columns: 1fr auto; }
 :root {
   --green: #183d36;
   --green-light: #e7eee9;

@@ -1,4 +1,5 @@
-export type Schedule = "AM" | "PM" | "AM & PM";
+export type Round = "AM" | "Lunch" | "PM";
+export type Schedule = Round | "AM & PM" | "AM & Lunch" | "Lunch & PM" | "AM & Lunch & PM";
 export interface Owner {
   id: string;
   name: string;
@@ -48,7 +49,7 @@ export interface CareTask {
   horseId: string;
   date: string;
   category: "Feed" | "Medication" | "Special care";
-  period: "AM" | "PM";
+  period: Round;
   title: string;
   detail: string;
   completion?: TaskCompletion;
@@ -72,6 +73,7 @@ export interface CalendarEvent {
   provider: string;
   reason: string;
   notes: string;
+  cancelled?: boolean;
 }
 export interface Helper {
   id: string;
@@ -81,15 +83,17 @@ export interface Helper {
 export interface ShiftAssignment {
   id: string;
   date: string;
-  period: "AM" | "PM";
+  period: Round;
   paddock: string;
   helperId: string;
+  cancelled?: boolean;
 }
 export interface DayOff {
   id: string;
   helperId: string;
   date: string;
   note?: string;
+  cancelled?: boolean;
 }
 export interface HistoryEntry {
   id: string;
@@ -100,4 +104,5 @@ export interface HistoryEntry {
   title: string;
   detail: string;
   author: string;
+  provider?: string;
 }

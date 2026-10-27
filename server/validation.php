@@ -38,7 +38,7 @@ function bh_validate(array $s): array {
     foreach ($d['care'] as $c) {
         bh_require(isset($ids['horses'][$c['horseId'] ?? '']));
         bh_require(in_array($c['kind'] ?? null, ['feed','supplement','medication'], true));
-        bh_require(in_array($c['schedule'] ?? null, ['AM','PM','AM & PM'], true));
+        bh_require(in_array($c['schedule'] ?? null, ['AM','Lunch','PM','AM & PM','AM & Lunch','Lunch & PM','AM & Lunch & PM'], true));
         bh_fields($c, ['name','instructions', $c['kind'] === 'medication' ? 'dose' : 'quantity']);
         bh_require(bh_date($c['effectiveStart'] ?? null) && (!isset($c['effectiveEnd']) || bh_date($c['effectiveEnd'])));
     }
@@ -47,12 +47,21 @@ function bh_validate(array $s): array {
             bh_require(isset($ids['horses'][$r['horseId'] ?? '']) && bh_date($r['date'] ?? null)); bh_fields($r, $fields);
         }
     }
-    foreach ($d['helpers'] as $h) bh_fields($h, ['name','initials']);
+    foreach ($d['events'] as $e) {
+        bh_require(in_array($e['type'], ['Vet','Farrier','Dentist','Medication change','Feed change','Vaccination','Deworming','Weight check','Other'], true));
+        bh_require($e['time'] === '' || preg_match('/^([01][0-9]|2[0-3]):[0-5][0-9]$/D', $e['time']) === 1);
+    }
+    foreach ($d['history'] as $h) {
+        bh_require(!isset($h['provider']) || bh_text($h['provider']));
+        bh_require(in_array($h['type'], ['Vet','Farrier','Medication','Feed','Weight','Notes','Photo'], true));
+    }
+    foreach ($d['helpers'] as $h) { bh_fields($h, ['name','initials']); bh_require(trim($h['name']) !== ''); }
     foreach (['shifts','daysOff'] as $key) foreach ($d[$key] as $r) {
         bh_require(isset($ids['helpers'][$r['helperId'] ?? '']) && bh_date($r['date'] ?? null));
-        if ($key === 'shifts') bh_require(bh_text($r['paddock'] ?? null) && in_array($r['period'] ?? null, ['AM','PM'], true));
+        if ($key === 'shifts') bh_require(bh_text($r['paddock'] ?? null) && trim($r['paddock']) !== '' && in_array($r['period'] ?? null, ['AM','Lunch','PM'], true));
         else bh_require(!isset($r['note']) || bh_text($r['note']));
     }
+    foreach (['events','shifts','daysOff'] as $key) foreach ($d[$key] as $r) bh_require(!isset($r['cancelled']) || is_bool($r['cancelled']));
     // JSON objects are decoded as stdClass so an empty completion map stays {}.
     bh_require(isset($s['completions']) && is_object($s['completions']) && count((array)$s['completions']) <= 50000);
     foreach ($s['completions'] as $key=>$c) {
@@ -71,9 +80,19 @@ function bh_decode(string $json): array {
 function bh_authorize_change(array $old, array $next, bool $admin, bool $replace): void {
     if ($replace) { bh_require($admin, 'Only the barn administrator can replace or reset the shared records.'); return; }
     bh_require($old['mode'] === $next['mode'], 'Use the administrator restore controls to replace records.');
-    foreach (['tasks','events','history','helpers','shifts','daysOff'] as $key) bh_require($old['data'][$key] === $next['data'][$key], 'This section is not editable yet.');
-    foreach (['horses','care'] as $key) {
+    bh_require($old['data']['tasks'] === $next['data']['tasks'], 'Task records are not edited directly.');
+    foreach (['horses','care','events','history','helpers','shifts','daysOff'] as $key) {
         $nextIds = array_column($next['data'][$key], 'id');
-        foreach ($old['data'][$key] as $r) bh_require(in_array($r['id'], $nextIds, true), 'Keep existing records; stop care instead of deleting it.');
+        foreach ($old['data'][$key] as $r) bh_require(in_array($r['id'], $nextIds, true), 'Keep existing records; stop care or cancel appointments and assignments instead of deleting them.');
+    }
+    foreach (['shifts','daysOff'] as $key) {
+        if ($old['data'][$key] === $next['data'][$key]) continue;
+        $slots = [];
+        foreach ($next['data'][$key] as $r) {
+            if (!empty($r['cancelled'])) continue;
+            $slot = json_encode($key === 'shifts' ? [$r['date'],$r['paddock'],$r['period']] : [$r['date'],$r['helperId']]);
+            bh_require(!isset($slots[$slot]), 'That assignment or day off is already recorded. Refresh the schedule.');
+            $slots[$slot] = true;
+        }
     }
 }

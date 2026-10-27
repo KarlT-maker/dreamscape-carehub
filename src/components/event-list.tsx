@@ -4,7 +4,8 @@ import { useBarn } from "./provider";
 import type { CalendarEvent } from "@/types";
 import { dateLabel } from "@/lib/dates";
 import { Empty } from "./ui";
-export function EventList({ events }: { events: CalendarEvent[] }) {
+import { horsePath } from "@/lib/horse-path";
+export function EventList({ events, onEdit }: { events: CalendarEvent[]; onEdit?: (event: CalendarEvent) => void }) {
   const { horses } = useBarn();
   return (
     <div className="event-list">
@@ -18,16 +19,18 @@ export function EventList({ events }: { events: CalendarEvent[] }) {
           <div>
             <div className="event-meta">
               <span className="badge">{event.type}</span>
-              <span>{event.time} PT</span>
+              <span>{event.time ? `${event.time} PT` : "Time not set"}</span>
+              {event.cancelled && <span className="badge amber">Cancelled</span>}
             </div>
             <h3>
-              <Link href={"/horses/" + event.horseId}>
+              <Link href={horsePath(event.horseId, "Calendar")}>
                 {horses.find((h) => h.id === event.horseId)?.name}
               </Link>{" "}
               · {event.reason}
             </h3>
             <p className="muted">{event.provider}</p>
             <p>{event.notes}</p>
+            {onEdit && <button className="text-button" onClick={()=>onEdit(event)}>Edit appointment</button>}
           </div>
         </article>
       ))}
