@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useBarn } from "./provider";
 import type { CalendarEvent } from "@/types";
-import { dateLabel } from "@/lib/dates";
+import { dateLabel, isoWeek } from "@/lib/dates";
 import { Empty } from "./ui";
 import { horsePath } from "@/lib/horse-path";
 export function EventList({ events, onEdit }: { events: CalendarEvent[]; onEdit?: (event: CalendarEvent) => void }) {
@@ -13,13 +13,13 @@ export function EventList({ events, onEdit }: { events: CalendarEvent[]; onEdit?
       {events.map((event) => (
         <article key={event.id} className="event-card">
           <div className="event-date">
-            <strong>{dateLabel(event.date, { day: "numeric" })}</strong>
-            <span>{dateLabel(event.date, { month: "short" })}</span>
+            <strong>{event.farrierWeekOnly?`W${isoWeek(event.date).week}`:dateLabel(event.date, { day: "numeric" })}</strong>
+            <span>{event.farrierWeekOnly?isoWeek(event.date).year:dateLabel(event.date, { month: "short" })}</span>
           </div>
           <div>
             <div className="event-meta">
               <span className="badge">{event.type}</span>
-              <span>{event.time ? `${event.time} PT` : "Time not set"}</span>
+              <span>{event.farrierWeekOnly?"Week planned · day not set":event.time ? `${event.time} PT` : "Time not set"}</span>
               {event.cancelled && <span className="badge amber">Cancelled</span>}
               {history.some(h=>h.sourceEventId===event.id&&!h.voided)&&<span className="badge">Work recorded</span>}
             </div>
@@ -31,7 +31,7 @@ export function EventList({ events, onEdit }: { events: CalendarEvent[]; onEdit?
             </h3>
             <p className="muted">{event.provider}</p>
             <p>{event.notes}</p>
-            {event.type==="Farrier"&&<Link className="text-button" href="/farrier">Open farrier calendar</Link>}
+            {event.type==="Farrier"&&<Link className="text-button" href="/farrier">Open farrier records</Link>}
             {onEdit && <button className="text-button" onClick={()=>onEdit(event)}>Edit appointment</button>}
           </div>
         </article>

@@ -61,6 +61,9 @@ function bh_validate(array $s): array {
         bh_require(!isset($h['voided']) || is_bool($h['voided']));
     }
     $eventsById = array_column($d['events'], null, 'id'); $recordedVisits = [];
+    foreach ([...$d['events'], ...$d['history']] as $row) if (array_key_exists('farrierWeekOnly', $row)) {
+        bh_require($row['type'] === 'Farrier' && is_bool($row['farrierWeekOnly']) && (!$row['farrierWeekOnly'] || (new DateTimeImmutable($row['date']))->format('N') === '1'), 'A farrier week must start on Monday.');
+    }
     foreach ($d['history'] as $h) if (array_key_exists('sourceEventId', $h)) {
         bh_require(bh_text($h['sourceEventId']));
         $event = $eventsById[$h['sourceEventId']] ?? null;

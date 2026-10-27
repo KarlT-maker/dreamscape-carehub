@@ -2121,7 +2121,7 @@ button:disabled { opacity: .55; cursor: wait; }
   .farrier-table thead { display: table-header-group; }
 }
 .farrier-planned-count, .farrier-completed-count { font-size: 12px; font-weight: 700; border-radius: 4px; padding: 2px 5px; }
-.farrier-planned-count { background: #f6edda; color: #72521c; }
+.farrier-planned-count { background: #fae9e5; color: #913827; }
 .farrier-completed-count { background: #e0eee4; color: #214c35; }
 .farrier-row-actions { display: grid; gap: 10px; }
 .farrier-row-actions button { text-align: left; }
@@ -2146,3 +2146,12 @@ button:disabled { opacity: .55; cursor: wait; }
   .farrier-day-sheet .panel-heading { flex-wrap: wrap; gap: 12px; }
   .farrier-day-sheet .panel-heading > div { width: 100%; }
 }
+.farrier-delete { color: #9c392a; }
+.farrier-record-actions { margin-top: 8px; }
+.button.danger { background: #8a3324; color: white; }
+.farrier-deleted summary { cursor: pointer; font-weight: 700; }
+.farrier-deleted small { display: block; }
+.farrier-record-actions .workspace-confirm { min-width: min(280px,100%); }
+.record-extra { margin: 16px 0; }
+.record-extra summary { cursor: pointer; font-weight: 650; margin-bottom: 12px; }
+.farrier-visit-table .farrier-planned-count, .farrier-visit-table .farrier-completed-count { display: block; width: fit-content; margin-bottom: 6px; }

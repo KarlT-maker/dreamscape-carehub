@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useBarn } from "./provider";
-import { dateLabel } from "@/lib/dates";
+import { farrierDateLabel } from "@/lib/dates";
 import { Empty } from "./ui";
 import { RecordForm } from "./record-form";
 import { FarrierForm } from "./farrier-form";
@@ -24,14 +24,15 @@ export function History({horseId,initialFilter="All"}:{horseId:string;initialFil
   const {history}=useBarn();
   const [filter,setFilter]=useState(["All",...TYPES].includes(initialFilter)?initialFilter:"All");
   const [editing,setEditing]=useState<HistoryEntry|"new"|null>(null);
-  const entries=history.filter(h=>h.horseId===horseId&&(filter==="All"||h.type===filter)).sort((a,b)=>b.date.localeCompare(a.date));
+  const entries=history.filter(h=>h.horseId===horseId&&(h.type!=="Farrier"||!h.voided)&&(filter==="All"||h.type===filter)).sort((a,b)=>b.date.localeCompare(a.date));
   return <section className="panel">
     <div className="panel-heading"><h2>Care history</h2><button className="button secondary" onClick={()=>setEditing("new")}>Add record</button></div>
     <p className="padded muted">Your team enters past visits and care records here. Vet and farrier records are not imported from another website. Use Calendar for upcoming appointments.</p>
     <div className="filter-row" aria-label="History filters">{["All",...TYPES].map(t=><button key={t} className={filter===t?"active":""} aria-pressed={filter===t} onClick={()=>setFilter(t)}>{t}</button>)}</div>
     {filter==="Farrier"&&<p className="padded"><Link className="text-button" href="/farrier">View all horses by billing week →</Link></p>}
+    {history.some(h=>h.horseId===horseId&&h.type==="Farrier"&&h.voided)&&<p className="padded muted">Deleted farrier entries can be restored in <Link className="text-button" href="/farrier">Farrier records → Record work → Deleted records</Link>.</p>}
     {editing && ((editing==="new"?filter:editing.type)==="Farrier"?<FarrierForm key={editing==="new"?"new":editing.id} horseId={horseId} existing={editing==="new"?undefined:editing} onSaved={()=>setEditing(null)} onClose={()=>setEditing(null)}/>:<HistoryForm key={editing==="new"?"new":editing.id} horseId={horseId} initialType={filter==="All"?"Notes":filter as HistoryEntry["type"]} existing={editing==="new"?undefined:editing} onClose={()=>setEditing(null)}/>)}
-    <div className="timeline">{entries.map(h=><article key={h.id}><div className="timeline-marker"/><p className="eyebrow">{dateLabel(h.date)} · {h.type}</p><h3>{h.title}</h3>{h.voided&&<p className="farrier-error-label">Entered in error — excluded from weekly totals</p>}{h.provider && <p className="muted">{h.provider}</p>}<p>{h.detail}</p><small className="muted">Last recorded by {h.author}</small><div><button className="text-button" onClick={()=>setEditing(h)}>Edit record</button></div></article>)}
+    <div className="timeline">{entries.map(h=><article key={h.id}><div className="timeline-marker"/><p className="eyebrow">{farrierDateLabel(h)} · {h.type}</p><h3>{h.title}</h3>{h.voided&&<p className="farrier-error-label">Entered in error — excluded from weekly totals</p>}{h.provider && <p className="muted">{h.provider}</p>}<p>{h.detail}</p><small className="muted">Last recorded by {h.author}</small><div><button className="text-button" onClick={()=>setEditing(h)}>Edit record</button></div></article>)}
       {!entries.length && <Empty>No records for this filter. Choose Add record to enter one.</Empty>}
     </div>
   </section>;

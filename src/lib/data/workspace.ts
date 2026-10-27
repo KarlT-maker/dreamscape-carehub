@@ -42,6 +42,9 @@ export function validateSnapshot(value: unknown): Snapshot {
     if((event.farrierWork!==undefined&&(event.type!=="Farrier"||!["Trim","Shoeing","Shoe removal","Other"].includes(event.farrierWork)))||(event.farrierFeet!==undefined&&!isText(event.farrierFeet))) throw new Error("A planned farrier visit is invalid.");
   }
   const recordedVisits=new Set<string>();
+  for(const row of [...d.events,...d.history]) if(row.farrierWeekOnly!==undefined) {
+    if(row.type!=="Farrier"||typeof row.farrierWeekOnly!=="boolean"||(row.farrierWeekOnly&&new Date(row.date+"T12:00:00Z").getUTCDay()!==1))throw new Error("A farrier week must start on Monday.");
+  }
   for(const record of d.history) if(record.sourceEventId!==undefined) {
     const event=d.events.find(e=>e.id===record.sourceEventId);
     if(!isText(record.sourceEventId)||record.type!=="Farrier"||!event||event.type!=="Farrier"||event.horseId!==record.horseId) throw new Error("A farrier record must match its planned horse visit.");

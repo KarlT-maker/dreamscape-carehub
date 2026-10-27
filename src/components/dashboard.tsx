@@ -29,7 +29,7 @@ export function Dashboard() {
       </section>
       <div className="right-column">
         <section className="panel special"><div className="panel-heading"><h2>Special care</h2></div><TaskList tasks={tasks.filter(t=>t.category==="Special care")}/></section>
-        <section className="panel"><div className="panel-heading"><h2>Visiting today</h2><Link href="/calendar" className="text-link">Calendar</Link></div><EventList events={events.filter(e=>!e.cancelled && e.date===today).sort((a,b)=>a.time.localeCompare(b.time))}/></section>
+        <section className="panel"><div className="panel-heading"><h2>Visiting today</h2><Link href="/calendar" className="text-link">Calendar</Link></div><EventList events={events.filter(e=>!e.cancelled && !e.farrierWeekOnly && e.date===today).sort((a,b)=>a.time.localeCompare(b.time))}/></section>
       </div>
     </div>
   </>;

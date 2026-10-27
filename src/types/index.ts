@@ -76,6 +76,7 @@ export interface CalendarEvent {
   cancelled?: boolean;
   farrierWork?: "Trim" | "Shoeing" | "Shoe removal" | "Other";
   farrierFeet?: string;
+  farrierWeekOnly?: boolean;
 }
 export interface Helper {
   id: string;
@@ -109,6 +110,7 @@ export interface HistoryEntry {
   provider?: string;
   farrierWork?: "Trim" | "Shoeing" | "Reset / refit" | "Shoe removal" | "Other";
   farrierFeet?: string;
+  farrierWeekOnly?: boolean;
   voided?: boolean;
   sourceEventId?: string;
 }

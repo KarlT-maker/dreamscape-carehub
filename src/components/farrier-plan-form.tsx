@@ -1,26 +1,40 @@
 "use client";
 import { useState } from "react";
 import { useBarn } from "./provider";
-import { RecordForm } from "./record-form";
+import { FarrierWeekFields } from "./farrier-week-fields";
 import { FARRIER_FEET, FARRIER_WORK } from "@/lib/farrier";
+import { isoWeek } from "@/lib/dates";
 import type { CalendarEvent } from "@/types";
 
 export function FarrierPlanForm({existing:initial,date,provider="Shelly",onSaved,onClose}:{existing?:CalendarEvent;date:string;provider?:string;onSaved:(plan:CalendarEvent)=>void;onClose:()=>void}) {
-  const {horses,savePlanning}=useBarn();
+  const {horses,savePlanning,saving,uncertain}=useBarn();
   const [existing]=useState(initial);
   const [id]=useState(()=>existing?.id??crypto.randomUUID());
-  return <RecordForm title={existing?"Edit planned farrier work":"Plan farrier work"} saveLabel="Save planned work" onClose={onClose} fields={[
-    {name:"date",label:"Visit date",type:"date",value:existing?.date??date,required:true},
-    {name:"provider",label:"Farrier",value:existing?.provider??provider,required:true},
-    {name:"horseId",label:"Horse",value:existing?.horseId??"",required:true,options:[{value:"",label:"Choose horse"},...[...horses].sort((a,b)=>a.name.localeCompare(b.name)).map(h=>({value:h.id,label:h.name}))]},
-    {name:"work",label:"Proposed work",value:existing?.farrierWork??"Trim",options:FARRIER_WORK.map(w=>({value:w,label:w}))},
-    {name:"feet",label:"Feet to work on",value:existing?.farrierFeet??"",options:[{value:"",label:"Not specified"},...FARRIER_FEET.map(f=>({value:f,label:f}))]},
-    {name:"time",label:"Time (Pacific, optional)",type:"time",value:existing?.time},
-    {name:"notes",label:"Notes for Shelly",type:"textarea",wide:true,value:existing?.farrierWork?existing.notes:[existing?.reason,existing?.notes].filter(Boolean).join(" · ")},
-    ...(existing?[{name:"status",label:"Visit status",value:existing.cancelled?"cancelled":"scheduled",options:[{value:"scheduled",label:"Planned"},{value:"cancelled",label:"Cancelled"}]}]:[]),
-  ]} onSave={async f=>{
-    if((f.work==="Other"||f.feet==="See notes")&&!f.notes)throw new Error("Add a note explaining the proposed work.");
-    const plan:CalendarEvent={...existing,id,horseId:f.horseId,date:f.date,time:f.time,type:"Farrier",provider:f.provider,reason:f.work+(f.feet?" · "+f.feet:""),notes:f.notes,farrierWork:f.work as CalendarEvent["farrierWork"],farrierFeet:f.feet,cancelled:f.status==="cancelled"};
-    const saved=await savePlanning("events",plan,existing);if(saved)onSaved(plan);return saved;
-  }}/>;
+  const [weekDate,setWeekDate]=useState(existing?.date??date);
+  const [day,setDay]=useState(existing&&!existing.farrierWeekOnly?existing.date:"");
+  const [error,setError]=useState("");
+  const [extra,setExtra]=useState(false);
+  const week=isoWeek(weekDate);
+  return <section className="panel add-form record-form" aria-label="Plan farrier work"><div className="panel-heading"><h2>{existing?"Edit proposed work":"Plan next trim or shoeing"}</h2></div>
+    <p className="muted">Choose a week and horse. This marks proposed work for Shelly; it does not count as work done.</p>
+    <form onSubmit={async e=>{
+      e.preventDefault();setError("");
+      const f=Object.fromEntries([...new FormData(e.currentTarget)].map(([k,v])=>[k,String(v).trim()]));
+      if((f.work==="Other"||f.feet==="See notes")&&!f.notes){setExtra(true);setError("Add a note explaining the proposed work.");return;}
+      if(day&&(day<week.start||day>week.end)){setExtra(true);setError("Choose a day within the selected week, or leave it blank.");return;}
+      const plan:CalendarEvent={...existing,id,horseId:f.horseId,date:day||week.start,farrierWeekOnly:!day,time:f.time,type:"Farrier",provider:f.provider||provider,reason:f.work+(f.feet?" · "+f.feet:""),notes:f.notes,farrierWork:f.work as CalendarEvent["farrierWork"],farrierFeet:f.feet,cancelled:f.status==="cancelled"};
+      if(await savePlanning("events",plan,existing)){onSaved(plan);onClose();}else setError("Not saved yet. Your entries are still here. Check the message above.");
+    }}><fieldset disabled={saving||uncertain}><div className="form-grid">
+      <FarrierWeekFields date={weekDate} onChange={value=>{setWeekDate(value);setDay("");}}/>
+      <label>Horse<select name="horseId" required defaultValue={existing?.horseId??""}><option value="">Choose horse</option>{[...horses].sort((a,b)=>a.name.localeCompare(b.name)).map(h=><option key={h.id} value={h.id}>{h.name}</option>)}</select></label>
+      <label>Next work proposed<select name="work" defaultValue={existing?.farrierWork??"Trim"}>{FARRIER_WORK.map(w=><option key={w} value={w}>{w==="Trim"?"Next trim":w==="Shoeing"?"Next shoeing":w}</option>)}</select></label>
+      {existing&&<label>Visit status<select name="status" defaultValue={existing.cancelled?"cancelled":"scheduled"}><option value="scheduled">Planned</option><option value="cancelled">Cancelled</option></select></label>}
+    </div><details className="record-extra" open={extra} onToggle={e=>setExtra(e.currentTarget.open)}><summary>Extra details (optional)</summary><div className="form-grid">
+      <label>Planned day (optional)<input type="date" value={day} min={week.start} max={week.end} onInput={e=>setDay(e.currentTarget.value)}/></label>
+      <label>Farrier<input name="provider" defaultValue={existing?.provider??provider} maxLength={200}/></label>
+      <label>Feet to work on<select name="feet" defaultValue={existing?.farrierFeet??""}><option value="">Not specified</option>{FARRIER_FEET.map(f=><option key={f}>{f}</option>)}</select></label>
+      <label>Time (Pacific, optional)<input name="time" type="time" defaultValue={existing?.time}/></label>
+      <label className="record-wide">Notes for Shelly<textarea name="notes" rows={2} maxLength={3000} defaultValue={existing?.farrierWork?existing.notes:[existing?.reason,existing?.notes].filter(Boolean).join(" · ")}/></label>
+    </div></details><div className="workspace-actions"><button className="button" type="submit">{saving?"Saving…":"Save proposed work"}</button><button className="button secondary" type="button" onClick={onClose}>Cancel</button></div></fieldset>{error&&<p className="workspace-error" role="alert">{error}</p>}</form>
+  </section>;
 }

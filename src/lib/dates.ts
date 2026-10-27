@@ -69,3 +69,7 @@ export function instructionState(
       ? "Ended"
       : "Current";
 }
+export function farrierDateLabel(entry: {date:string;farrierWeekOnly?:boolean}) {
+  const week=isoWeek(entry.date);
+  return entry.farrierWeekOnly?`Week ${week.week} · ${week.year} (day not noted)`:dateLabel(entry.date);
+}

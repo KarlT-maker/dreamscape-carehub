@@ -5,6 +5,7 @@ import { PageHeader } from "./ui";
 import { EventList } from "./event-list";
 import { EventForm, EVENT_TYPES } from "./event-form";
 import type { CalendarEvent } from "@/types";
+import { isoWeek } from "@/lib/dates";
 export function Calendar({horseId}: {horseId?: string}) {
   const {events,horses,today} = useBarn();
   const [type,setType] = useState("All");
@@ -12,7 +13,7 @@ export function Calendar({horseId}: {horseId?: string}) {
   const [from,setFrom] = useState(today);
   const [status,setStatus] = useState("Scheduled");
   const [editing,setEditing] = useState<CalendarEvent | "new" | null>(null);
-  const filtered = events.filter(e=>(type==="All"||e.type===type)&&(horse==="All"||e.horseId===horse)&&(!from||e.date>=from)&&(status==="All"||(status==="Cancelled" ? e.cancelled : !e.cancelled))).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  const filtered = events.filter(e=>(type==="All"||e.type===type)&&(horse==="All"||e.horseId===horse)&&(!from||(e.farrierWeekOnly?isoWeek(e.date).end:e.date)>=from)&&(status==="All"||(status==="Cancelled" ? e.cancelled : !e.cancelled))).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
   return <>
     <PageHeader eyebrow="PLANNING AHEAD" title={horseId ? "Horse appointments" : "Calendar"} description="Add visits and planned care here. Vet and farrier appointments appear on the horse’s profile too." action={<button className="button" onClick={()=>setEditing("new")}>Add appointment</button>} />
     {editing && <EventForm key={editing==="new" ? "new" : editing.id} existing={editing==="new" ? undefined : editing} horseId={horseId ?? (horse!=="All" ? horse : undefined)} onClose={()=>setEditing(null)} />}

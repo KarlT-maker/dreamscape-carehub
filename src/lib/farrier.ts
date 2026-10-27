@@ -15,6 +15,16 @@ export function farrierTotals(records: HistoryEntry[]) {
   };
 }
 export type FarrierDayRow = {plan?: CalendarEvent; record?: HistoryEntry};
+export function farrierWeekRows(events: CalendarEvent[], history: HistoryEntry[], start: string, end: string, provider = ""): FarrierDayRow[] {
+  const matches=(name?:string)=>!provider||name?.trim().toLocaleLowerCase()===provider.trim().toLocaleLowerCase();
+  const plans=events.filter(e=>e.type==="Farrier"&&!e.cancelled&&e.date>=start&&e.date<=end&&matches(e.provider));
+  const completed=history.filter(h=>h.type==="Farrier"&&!h.voided);
+  const rows:FarrierDayRow[]=plans.map(plan=>({plan,record:completed.find(h=>h.sourceEventId===plan.id)}));
+  for(const record of completed.filter(h=>h.date>=start&&h.date<=end&&matches(h.provider))) {
+    if(!rows.some(r=>r.record?.id===record.id))rows.push({record});
+  }
+  return rows;
+}
 export function farrierDayRows(events: CalendarEvent[], history: HistoryEntry[], date: string, provider = ""): FarrierDayRow[] {
   const matches = (name?: string) => !provider || name?.trim().toLocaleLowerCase() === provider.trim().toLocaleLowerCase();
   const plans = events.filter(e=>e.type==="Farrier"&&!e.cancelled&&e.date===date&&matches(e.provider));

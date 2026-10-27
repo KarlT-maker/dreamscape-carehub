@@ -9,7 +9,8 @@ import { HorseForm } from "./horse-form";
 import { CarePlan } from "./care-plan";
 import { History } from "./history";
 import { Calendar } from "./calendar";
-import { age, dateLabel, instructionState } from "@/lib/dates";
+import { age, dateLabel, instructionState, isoWeek } from "@/lib/dates";
+import { farrierDateLabel } from "@/lib/dates";
 const tabs = ["Overview", "Care", "Calendar", "History", "Photos", "Documents"];
 export function HorseProfile({
   id,
@@ -168,7 +169,7 @@ export function HorseProfile({
                 </div>
                 <EventList
                   events={events
-                    .filter((e) => !e.cancelled && e.horseId === id && e.date >= today)
+                    .filter((e) => !e.cancelled && e.horseId === id && (e.farrierWeekOnly?isoWeek(e.date).end:e.date) >= today)
                     .sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))
                     .slice(0, 3)}
                 />
@@ -185,11 +186,11 @@ export function HorseProfile({
                 </div>
                 <div className="padded">
                   {history
-                    .filter((h) => h.horseId === id)
+                    .filter((h) => h.horseId === id && !h.voided)
                     .slice(0, 2)
                     .map((h) => (
                       <div className="overview-instruction" key={h.id}>
-                        <small className="muted">{dateLabel(h.date)}</small>
+                        <small className="muted">{farrierDateLabel(h)}</small>
                         <h3>{h.title}</h3>
                         <p>{h.detail}</p>
                       </div>

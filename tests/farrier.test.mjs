@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {isoWeek,isoWeekStart,isoWeeksInYear} from '../src/lib/dates.ts';
-import {farrierWeekRecords,farrierTotals,farrierDayRows,FARRIER_WORK} from '../src/lib/farrier.ts';
+import {isoWeek,isoWeekStart,isoWeeksInYear,farrierDateLabel} from '../src/lib/dates.ts';
+import {farrierWeekRecords,farrierTotals,farrierDayRows,farrierWeekRows,FARRIER_WORK} from '../src/lib/farrier.ts';
 import {recordFarrierVisit} from '../src/lib/data/planning.ts';
 import {emptySnapshot,validateSnapshot} from '../src/lib/data/workspace.ts';
 
@@ -68,4 +68,27 @@ test('farrier details round-trip in backups; legacy history remains valid; malfo
   for(const fields of [{farrierWork:'Invalid'},{farrierFeet:[]},{voided:'false'},{type:'Vet',farrierWork:'Trim'}]){
     const invalid=structuredClone(s);Object.assign(invalid.data.history[0],fields);assert.throws(()=>validateSnapshot(invalid));
   }
+});
+
+test('week-only plans and records survive backups without inventing an actual day',()=>{
+  const s=emptySnapshot();s.data.horses=[{id:'h',name:'Horse',location:'Barn',status:'Active',sex:'',breed:'',colour:'',birthDate:'',arrivalDate:'',owner:{id:'o',name:''},specialInstructions:''}];
+  const plan={id:'p',horseId:'h',type:'Farrier',date:'2026-12-28',time:'',provider:'Shelly',reason:'Trim',notes:'',farrierWeekOnly:true};
+  const record={id:'r',horseId:'h',type:'Farrier',date:'2026-12-28',title:'Trim',detail:'',author:'Helper',farrierWeekOnly:true,sourceEventId:'p'};
+  s.data.events=[plan];s.data.history=[record];
+  assert.deepEqual(validateSnapshot(JSON.parse(JSON.stringify(s))),s);
+  assert.equal(farrierDateLabel(record),'Week 53 · 2026 (day not noted)');
+  for(const section of ['events','history'])for(const change of [{farrierWeekOnly:'true'},{date:'2026-12-29'},{type:'Vet'}]){
+    const bad=structuredClone(s);Object.assign(bad.data[section][0],change);assert.throws(()=>validateSnapshot(bad));
+  }
+  assert.equal(farrierTotals(farrierWeekRecords(s.data.history,'2026-12-28','2027-01-03')).records,1);
+});
+
+test('weekly sheets show separate days once and keep moved work in its actual billing week',()=>{
+  const plan={id:'p',horseId:'h',type:'Farrier',date:'2026-10-26',provider:'Shelly',farrierWeekOnly:true};
+  const done={id:'r',horseId:'h',type:'Farrier',date:'2026-10-29',provider:'Shelly',sourceEventId:'p'};
+  assert.deepEqual(farrierWeekRows([plan],[done],'2026-10-26','2026-11-01'),[{plan,record:done}]);
+  const moved={...done,date:'2026-11-03'};
+  assert.deepEqual(farrierWeekRows([plan],[moved],'2026-11-02','2026-11-08'),[{record:moved}]);
+  assert.equal(farrierTotals(farrierWeekRecords([moved],'2026-10-26','2026-11-01')).records,0);
+  assert.equal(farrierWeekRows([plan],[{...done,voided:true}],'2026-10-26','2026-11-01')[0].record,undefined);
 });
