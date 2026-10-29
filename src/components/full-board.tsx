@@ -7,7 +7,9 @@ import { useBarn } from "./provider";
 import { dateLabel, instructionState, offsetDate } from "@/lib/dates";
 import { horsePath } from "@/lib/horse-path";
 import { PADDOCKS, PADDOCK_ALIASES } from "@/lib/data/roster";
-import type { CareInstruction, Round } from "@/types";
+import type { CareInstruction } from "@/types";
+import { currentSpecialCare, sortSummaryCare } from "@/lib/care-summary";
+import { crewForDay } from "@/lib/crew-calendar";
 
 /**
  * The whole feed room on one screen, the way the physical whiteboards read:
@@ -43,7 +45,7 @@ const when = (s: CareInstruction["schedule"]) =>
   s === "AM & PM" ? "AM·PM" : s;
 
 export function FullBoard() {
-  const { horses, care, today, helpers, shifts, daysOff } = useBarn();
+  const { horses, care, today, helpers, shifts } = useBarn();
   const [full, setFull] = useFullScreen();
 
   const current = care.filter((c) => instructionState(c, today) === "Current");
@@ -60,15 +62,7 @@ export function FullBoard() {
     return i === -1 ? null : String.fromCharCode(65 + i); // A, B, C…
   };
 
-  const helperName = (id?: string) =>
-    helpers.find((h) => h.id === id)?.name ?? "—";
-  const onShift = (paddock: string, period: Round) =>
-    shifts.filter(s => !s.cancelled && s.date === today && s.paddock === paddock && s.period === period)
-      .map(s => helperName(s.helperId)).join(", ") || "—";
-
-  const offToday = daysOff
-    .filter((d) => !d.cancelled && d.date === today)
-    .map((d) => helperName(d.helperId));
+  const crew=crewForDay(shifts,helpers,today);
 
   const weekEnd = offsetDate(today, 7);
   const changes = care
@@ -91,7 +85,7 @@ export function FullBoard() {
     <section className="fb">
       <header className="fb-top">
         <div className="fb-title">
-          <h1>Feed room board</h1>
+          <h1>Dreamscape horse summary</h1>
           <span className="fb-date">
             {dateLabel(today, { weekday: "long", month: "long", day: "numeric" })}
           </span>
@@ -101,10 +95,6 @@ export function FullBoard() {
         </div>
         <div className="fb-stat">
           <strong>{medCount}</strong> meds on
-        </div>
-        <div className="fb-info">
-          <span className="fb-label">Off today</span>
-          {!helpers.length ? "No crew entered" : offToday.length ? offToday.join(", ") : "No days off recorded"}
         </div>
         <div className="fb-info fb-changes">
           <span className="fb-label">Med changes this week</span>
@@ -142,14 +132,13 @@ export function FullBoard() {
                   )}
                 </h2>
                 <span className="fb-crew">
-                  <b>AM</b> {onShift(paddock, "AM")} <b>Lunch</b> {onShift(paddock, "Lunch")} <b>PM</b>{" "}
-                  {onShift(paddock, "PM")}
+                  <b>Full day</b> {crew.find(g=>g.paddock===paddock)?.people.map(p=>p.name).join(", ")||"—"}
                 </span>
               </div>
               <table className="fb-table">
                 <tbody>
                   {inPaddock.map((horse) => {
-                    const mine = current.filter((c) => c.horseId === horse.id);
+                    const mine = sortSummaryCare(current.filter((c) => c.horseId === horse.id));
                     const feed = mine.filter((c) => c.kind !== "medication");
                     const meds = mine.filter((c) => c.kind === "medication");
                     return (
@@ -186,8 +175,8 @@ export function FullBoard() {
                               {c.instructions && <span className="fb-note"> — {c.instructions}</span>}
                             </div>
                           ))}
-                          {horse.specialInstructions && (
-                            <div className="fb-special">⚑ {horse.specialInstructions}</div>
+                          {currentSpecialCare(horse,today) && (
+                            <div className="fb-special">⚑ {currentSpecialCare(horse,today)}</div>
                           )}
                         </td>
                       </tr>

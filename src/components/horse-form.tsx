@@ -28,10 +28,10 @@ export function HorseForm({ horse: initialHorse, onClose, onSaved }: { horse?: H
       const f = new FormData(e.currentTarget);
       const text = (key: string) => String(f.get(key) ?? "").trim();
       if (!text("name") || !text("location")) return;
-      const next: Horse = { id: horse?.id ?? newId, name: text("name"), registeredName: text("registeredName"),
+      const next: Horse = { ...horse, id: horse?.id ?? newId, name: text("name"), registeredName: text("registeredName"),
         birthDate: text("birthDate"), sex: text("sex") as Horse["sex"], breed: text("breed"), colour: text("colour"),
         owner: { id: horse?.owner.id ?? ownerId, name: text("owner") }, arrivalDate: text("arrivalDate"),
-        location: text("location"), status: horse?.status ?? "Active", specialInstructions: text("instructions") };
+        location: text("location"), status: horse?.status ?? "Active", specialInstructions: horse?.specialInstructions??"", specialCharacteristics:text("characteristics"),specialCareStart:horse?.specialCareStart??"",specialCareEnd:horse?.specialCareEnd??"" };
       if (await (horse ? updateHorse(next, horse) : addHorse(next))) onSaved(next.name);
     }}>
       <p className="muted">Only the name and paddock are required. Leave anything you do not know blank.</p>
@@ -41,10 +41,10 @@ export function HorseForm({ horse: initialHorse, onClose, onSaved }: { horse?: H
       </label>)}
       <datalist id="ranch-paddocks">{[...new Set([...PADDOCKS, ...horses.map(h => h.location)])].map(p => <option value={p} key={p} />)}</datalist>
       <label>Sex<select name="sex" defaultValue={horse?.sex ?? ""}><option value="">Not entered</option><option>Mare</option><option>Gelding</option><option>Stallion</option></select></label>
-      <label>Special instructions<input name="instructions" defaultValue={horse?.specialInstructions ?? ""} /></label>
+      <label className="record-wide">Special characteristics<textarea name="characteristics" rows={3} maxLength={3000} defaultValue={horse?.specialCharacteristics??""} placeholder="Scars, identifying features or background notes"/></label>
       </div>
       <button className="button" type="submit" disabled={saving || uncertain}>{saving ? "Saving…" : horse ? "Save profile" : "Add to herd"}</button>
-      <p className="muted">{shared ? "Saved online for the whole barn." : "Saved in this browser."} Add feed and medications in the horse’s Care tab.</p>
+      <p className="muted">{shared ? "Saved online for the whole barn." : "Saved in this browser."} Edit medications, feed, supplements and special care in the horse’s Care tab.</p>
     </form>
   </section>;
 }

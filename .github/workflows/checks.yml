@@ -1,0 +1,23 @@
+name: CareHub checks
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: php tests/server-validation.php
+      - name: Test shared saving with synthetic records
+        run: PHP_BINARY="$(command -v php)" node tests/server.integration.mjs

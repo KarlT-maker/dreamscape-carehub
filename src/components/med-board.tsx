@@ -35,7 +35,7 @@ export function MedBoard() {
   return (
     <BoardFrame
       eyebrow="FEED ROOM"
-      title="Medications"
+      title="Daily regular medication"
       subtitle="Doses due today, and changes coming up."
       count={dosesToday}
       countLabel="doses due"

@@ -88,6 +88,7 @@ try {
         if (!$row['undo']) throw new InvalidArgumentException('There is no previous reset to undo.');
         $next = bh_decode($row['undo']);
     } else $next = bh_decode(wp_json_encode(json_decode($raw, false, 64, JSON_THROW_ON_ERROR)->snapshot ?? null));
+    if ($action === 'save') $next = bh_validate(bh_preserve_profile_fields($old, $next));
     bh_authorize_change($old, $next, $admin, $action !== 'save');
     $next['revision'] = $old['revision'] + 1; $next['savedAt'] = gmdate('c');
     if ($action === 'save') {

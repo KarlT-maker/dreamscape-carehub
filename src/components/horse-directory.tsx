@@ -13,7 +13,7 @@ export function HorseDirectory() {
   const [adding, setAdding] = useState(false);
   const [message, setMessage] = useState("");
   const filtered = horses.filter((h) =>
-    [h.name, h.owner.name, h.location].some((v) =>
+    [h.name, h.owner.name, h.location,h.specialCharacteristics??""].some((v) =>
       v.toLowerCase().includes(query.toLowerCase()),
     ),
   );
@@ -59,6 +59,7 @@ export function HorseDirectory() {
                 {h.birthDate ? `${age(h.birthDate, today)} years` : "Age not entered"} · {h.sex || "Sex not entered"} · {h.breed || "Breed not entered"}
               </p>
               <dl>
+                <div className="horse-characteristics"><dt>Special characteristics</dt><dd>{h.specialCharacteristics||"Not entered"}</dd></div>
                 <div>
                   <dt>Owner</dt>
                   <dd>{h.owner.name || "Not entered"}</dd>

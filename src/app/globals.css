@@ -35,6 +35,21 @@
 .schedule-helper-option span, .schedule-helper-option small { font-size: 12px; }
 .schedule-helper-option:focus-visible { outline: 3px solid #977441; outline-offset: 3px; }
 .schedule-saved { background: #e7eee9; margin: 0 16px 16px; border-radius: 6px; }
+.archived-helpers { margin: 0 0 20px; padding: 12px; border: 1px solid #dce3dd; border-radius: 8px; }
+.archived-helpers summary { cursor: pointer; font-weight: 600; }
+.archived-helpers p { margin: 12px 0; }
+.crew-full-day { display: flex; flex-wrap: wrap; gap: 8px; }
+.crew-full-day small { display: block; }
+.chore-weekdays { margin: 16px 0; }
+.chore-weekdays .filter-row { flex-wrap: wrap; padding-left: 0; }
+.ending-care-item { padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid #ddd5be; overflow-wrap: anywhere; }
+.ending-care-item:last-child { border-bottom: 0; margin-bottom: 0; }
+.ending-care-item h3 { margin: 10px 0; }
+.care-ending { border-color: #d6ba7a; }
+.horse-characteristics { grid-column: 1 / -1; }
+.horse-characteristics dd { white-space: pre-wrap; overflow-wrap: anywhere; }
+.fb-feed { color: #654207; background: #fff0cf; border-left: 3px solid #b78023; padding: 2px 5px; margin-bottom: 3px; }
+.fb-feed .fb-qty { font-weight: 800; }
 .day-off-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 8px 0; }
 .task-row.care-summary-row { grid-template-columns: 1fr auto; }
 .crew-view-nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 24px; }

@@ -16,10 +16,10 @@ import {
   ClipboardList,
 } from "lucide-react";
 const boardLinks = [
-  { href: "/boards/full", label: "Full board", icon: LayoutGrid },
+  { href: "/boards/full", label: "Dreamscape horse summary", icon: LayoutGrid },
   { href: "/boards/mash", label: "Mash & feed", icon: Wheat },
-  { href: "/boards/medication", label: "Medications", icon: Pill },
-  { href: "/boards/crew", label: "Who's on what", icon: Users },
+  { href: "/boards/medication", label: "Daily regular medication", icon: Pill },
+  { href: "/boards/crew", label: "Helpers’ work schedule", icon: Users },
 ];
 const links = [
   { href: "/", label: "Today", icon: Sun },

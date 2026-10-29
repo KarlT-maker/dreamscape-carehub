@@ -34,6 +34,9 @@ function bh_validate(array $s): array {
         bh_require(in_array($h['sex'] ?? null, ['','Mare','Gelding','Stallion'], true));
         bh_require(in_array($h['status'] ?? null, ['Active','Away','Archived'], true));
         bh_require(!isset($h['registeredName']) || bh_text($h['registeredName']));
+        bh_require(!array_key_exists('specialCharacteristics',$h) || bh_text($h['specialCharacteristics']));
+        foreach (['specialCareStart','specialCareEnd'] as $key) bh_require(!array_key_exists($key,$h) || $h[$key] === '' || bh_date($h[$key]));
+        bh_require(empty($h['specialCareStart']) || empty($h['specialCareEnd']) || $h['specialCareEnd'] >= $h['specialCareStart'], 'The special care end date must follow its start date.');
     }
     foreach ($d['care'] as $c) {
         bh_require(isset($ids['horses'][$c['horseId'] ?? '']));
@@ -44,11 +47,19 @@ function bh_validate(array $s): array {
     }
     foreach (['tasks'=>['category','period','title','detail'], 'events'=>['type','time','provider','reason','notes'], 'history'=>['title','detail','author','type']] as $key=>$fields) {
         foreach ($d[$key] as $r) {
-            bh_require(isset($ids['horses'][$r['horseId'] ?? '']) && bh_date($r['date'] ?? null)); bh_fields($r, $fields);
+            bh_require((isset($ids['horses'][$r['horseId'] ?? '']) || ($key === 'events' && ($r['type'] ?? '') === 'Chore' && ($r['horseId'] ?? null) === '')) && bh_date($r['date'] ?? null)); bh_fields($r, $fields);
         }
     }
     foreach ($d['events'] as $e) {
-        bh_require(in_array($e['type'], ['Vet','Farrier','Dentist','Medication change','Feed change','Vaccination','Deworming','Weight check','Other'], true));
+        bh_require(in_array($e['type'], ['Vet','Farrier','Dentist','Medication change','Feed change','Vaccination','Deworming','Weight check','Other','Chore'], true));
+        if ($e['type'] === 'Chore') bh_require(trim($e['reason']) !== '', 'Enter a chore title.');
+        if (array_key_exists('repeat',$e)) bh_require($e['type'] === 'Chore' && in_array($e['repeat'], ['daily','weekly'], true));
+        if (($e['repeat'] ?? '') === 'weekly') bh_require(isset($e['repeatDays']) && is_array($e['repeatDays']) && count($e['repeatDays']) > 0);
+        if (array_key_exists('repeatDays',$e)) {
+            bh_require(($e['repeat'] ?? '') === 'weekly' && is_array($e['repeatDays']) && array_is_list($e['repeatDays']) && count(array_unique($e['repeatDays'], SORT_REGULAR)) === count($e['repeatDays']));
+            foreach ($e['repeatDays'] as $day) bh_require(is_int($day) && $day >= 1 && $day <= 7);
+        }
+        if (array_key_exists('repeatUntil',$e)) bh_require(isset($e['repeat']) && bh_date($e['repeatUntil']) && $e['repeatUntil'] >= $e['date']);
         bh_require($e['time'] === '' || preg_match('/^([01][0-9]|2[0-3]):[0-5][0-9]$/D', $e['time']) === 1);
         bh_require(!isset($e['farrierWork']) || ($e['type'] === 'Farrier' && in_array($e['farrierWork'], ['Trim','Shoeing','Shoe removal','Other'], true)));
         bh_require(!isset($e['farrierFeet']) || bh_text($e['farrierFeet']));
@@ -70,7 +81,7 @@ function bh_validate(array $s): array {
         bh_require($h['type'] === 'Farrier' && $event && $event['type'] === 'Farrier' && $event['horseId'] === $h['horseId'], 'A farrier record must match its planned horse visit.');
         if (empty($h['voided'])) { bh_require(!isset($recordedVisits[$h['sourceEventId']]), 'This farrier visit already has a completed work record.'); $recordedVisits[$h['sourceEventId']] = true; }
     }
-    foreach ($d['helpers'] as $h) { bh_fields($h, ['name','initials']); bh_require(trim($h['name']) !== ''); }
+    foreach ($d['helpers'] as $h) { bh_fields($h, ['name','initials']); bh_require(trim($h['name']) !== '' && (!array_key_exists('archived',$h) || is_bool($h['archived']))); }
     foreach (['shifts','daysOff'] as $key) foreach ($d[$key] as $r) {
         bh_require(isset($ids['helpers'][$r['helperId'] ?? '']) && bh_date($r['date'] ?? null));
         if ($key === 'shifts') bh_require(bh_text($r['paddock'] ?? null) && trim($r['paddock']) !== '' && in_array($r['period'] ?? null, ['AM','Lunch','PM'], true));
@@ -92,6 +103,16 @@ function bh_decode(string $json): array {
     $s['completions'] = $object->completions ?? null;
     return bh_validate($s);
 }
+// Older open profile forms omit fields added in later releases. Preserve those
+// fields; a current form sends an explicit empty string when clearing them.
+function bh_preserve_profile_fields(array $old, array $next): array {
+    $horses = array_column($old['data']['horses'], null, 'id');
+    foreach ($next['data']['horses'] as &$horse) foreach (['specialCharacteristics','specialCareStart','specialCareEnd'] as $field) {
+        if (!array_key_exists($field, $horse) && array_key_exists($field, $horses[$horse['id']] ?? [])) $horse[$field] = $horses[$horse['id']][$field];
+    }
+    unset($horse);
+    return $next;
+}
 function bh_authorize_change(array $old, array $next, bool $admin, bool $replace): void {
     if ($replace) { bh_require($admin, 'Only the barn administrator can replace or reset the shared records.'); return; }
     bh_require($old['mode'] === $next['mode'], 'Use the administrator restore controls to replace records.');
@@ -109,5 +130,10 @@ function bh_authorize_change(array $old, array $next, bool $admin, bool $replace
             bh_require(!isset($slots[$slot]), 'That assignment or day off is already recorded. Refresh the schedule.');
             $slots[$slot] = true;
         }
+    }
+    $oldShifts = array_column($old['data']['shifts'], null, 'id');
+    $helpers = array_column($next['data']['helpers'], null, 'id');
+    foreach ($next['data']['shifts'] as $shift) if (!empty($helpers[$shift['helperId']]['archived']) && empty($shift['cancelled'])) {
+        bh_require(($oldShifts[$shift['id']] ?? null) === $shift, 'Restore the archived helper before adding new assignments. Existing records are kept.');
     }
 }

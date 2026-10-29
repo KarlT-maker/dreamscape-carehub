@@ -6,9 +6,11 @@ import { dateLabel, instructionState, offsetDate } from "@/lib/dates";
 import type { CareInstruction } from "@/types";
 import { Empty } from "./ui";
 import { CareForm } from "./care-form";
+import { SpecialCareForm } from "./special-care-form";
+import { specialCareState } from "@/lib/care-summary";
 
 const SECTIONS = [
-  { kind: "medication", title: "Medications", add: "Add a medication" },
+  { kind: "medication", title: "Daily regular medication", add: "Add a medication" },
   { kind: "feed", title: "Feed & mash", add: "Add a feed or mash" },
   { kind: "supplement", title: "Supplements", add: "Add a supplement" },
 ] as const;
@@ -21,6 +23,7 @@ type Editing =
 export function CarePlan({ horseId }: { horseId: string }) {
   const { care, today, horses, stopCare } = useBarn();
   const [editing, setEditing] = useState<Editing>(null);
+  const [editingSpecial,setEditingSpecial]=useState(false);
   const horse = horses.find((h) => h.id === horseId);
   const horseName = horse?.name ?? "this horse";
 
@@ -139,11 +142,14 @@ export function CarePlan({ horseId }: { horseId: string }) {
 
       <section className="panel">
         <div className="panel-heading">
-          <h2>Special instructions</h2>
+          <h2>Special care</h2>
+          <button className="button secondary small" disabled={!horse} onClick={()=>setEditingSpecial(true)}>Edit special care</button>
         </div>
-        <p className="padded">
-          {horse?.specialInstructions || "No special instructions recorded."}
-        </p>
+        {editingSpecial&&horse?<SpecialCareForm horse={horse} onClose={()=>setEditingSpecial(false)}/>:<div className="padded">
+          <p>{horse?.specialInstructions || "No special care recorded."}</p>
+          {horse?.specialInstructions&&<p className="muted">{specialCareState(horse,today)}{horse.specialCareStart&&` · Starts ${dateLabel(horse.specialCareStart)}`}{horse.specialCareEnd?` · Last day ${dateLabel(horse.specialCareEnd)}`:" · Ongoing"}</p>}
+          <p className="muted">Leave the last day blank for ongoing care. Dated care stays visible through its last day.</p>
+        </div>}
       </section>
     </div>
   );

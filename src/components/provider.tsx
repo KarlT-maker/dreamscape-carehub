@@ -17,6 +17,7 @@ export type CareDraft = {
   schedule: CareInstruction["schedule"];
   instructions: string;
   effectiveStart: string;
+  effectiveEnd?: string;
 };
 
 type Context = Data & {
@@ -63,6 +64,7 @@ function buildInstruction(
     schedule: draft.schedule,
     instructions: draft.instructions.trim(),
     effectiveStart: draft.effectiveStart,
+    ...(draft.effectiveEnd?{effectiveEnd:draft.effectiveEnd}:{}),
   };
   return draft.kind === "medication"
     ? { ...shared, kind: "medication", dose: draft.amount.trim() }
@@ -174,7 +176,7 @@ export function BarnProvider({
 
   function resetWorkspace(mode: Snapshot["mode"]) {
     const data = mode === "examples" ? careRepository.load(today) : emptyData();
-    if (mode === "roster") data.horses = current.current.data.horses.map(h => ({ ...h, registeredName: "", sex: "", breed: "", colour: "", birthDate: "", arrivalDate: "", owner: { ...h.owner, name: "" }, specialInstructions: "" }));
+    if (mode === "roster") data.horses = current.current.data.horses.map(h => ({ ...h, registeredName: "", sex: "", breed: "", colour: "", birthDate: "", arrivalDate: "", owner: { ...h.owner, name: "" }, specialInstructions: "", specialCharacteristics:"", specialCareStart:"", specialCareEnd:"" }));
     return commit({ ...emptySnapshot(), mode, data }, true);
   }
   async function undoReset() {

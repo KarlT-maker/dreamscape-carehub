@@ -17,6 +17,9 @@ export interface Horse {
   location: string;
   status: "Active" | "Away" | "Archived";
   specialInstructions: string;
+  specialCareStart?: string;
+  specialCareEnd?: string;
+  specialCharacteristics?: string;
 }
 export interface CareItem {
   id: string;
@@ -69,7 +72,7 @@ export interface CalendarEvent {
   horseId: string;
   date: string;
   time: string;
-  type: EventType;
+  type: EventType | "Chore";
   provider: string;
   reason: string;
   notes: string;
@@ -77,11 +80,15 @@ export interface CalendarEvent {
   farrierWork?: "Trim" | "Shoeing" | "Shoe removal" | "Other";
   farrierFeet?: string;
   farrierWeekOnly?: boolean;
+  repeat?: "daily" | "weekly";
+  repeatDays?: number[];
+  repeatUntil?: string;
 }
 export interface Helper {
   id: string;
   name: string;
   initials: string;
+  archived?: boolean;
 }
 export interface ShiftAssignment {
   id: string;

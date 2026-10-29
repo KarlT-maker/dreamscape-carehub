@@ -4,7 +4,6 @@ import { paddockNames } from "@/lib/data/workspace";
 import { useBarn } from "./provider";
 import { dateLabel, offsetDate, weekStart } from "@/lib/dates";
 import { PADDOCKS } from "@/lib/data/roster";
-import { ROUNDS } from "@/lib/schedules";
 import { Empty } from "./ui";
 import { RecordForm } from "./record-form";
 import type { Helper, DayOff } from "@/types";
@@ -12,14 +11,14 @@ function HelperForm({existing:initial,onClose}:{existing?:Helper;onClose:()=>voi
   const {savePlanning}=useBarn();
   const [existing]=useState(initial);
   const [id]=useState(()=>existing?.id ?? crypto.randomUUID());
-  return <RecordForm title={existing?"Edit helper name":"Add helper to schedule"} onClose={onClose} saveLabel="Save helper" fields={[{name:"name",label:"Helper name",value:existing?.name,required:true}]} onSave={f=>savePlanning("helpers",{...existing,id,name:f.name,initials:f.name.split(/\s+/).slice(0,2).map(n=>n[0]).join("").toUpperCase()},existing)}/>;
+  return <><p className="workspace-notice">Archiving removes a name from new assignment choices. Existing assignments and past records keep the name. This does not change their login account.</p><RecordForm title={existing?"Edit or archive helper":"Add helper to schedule"} onClose={onClose} saveLabel="Save helper" fields={[{name:"name",label:"Helper name",value:existing?.name,required:true},...(existing?[{name:"status",label:"Helper status",value:existing.archived?"archived":"active",options:[{value:"active",label:"Active helper"},{value:"archived",label:"Archived — keep their records"}]}]:[])]} onSave={f=>savePlanning("helpers",{...existing,id,name:f.name,initials:f.name.split(/\s+/).slice(0,2).map(n=>n[0]).join("").toUpperCase(),archived:f.status==="archived"},existing)}/></>;
 }
 function DayOffForm({existing:initial,initialDate,onClose}:{existing?:DayOff;initialDate:string;onClose:()=>void}) {
   const {savePlanning,helpers,today}=useBarn();
   const [existing]=useState(initial);
   const [id]=useState(()=>existing?.id ?? crypto.randomUUID());
   return <RecordForm title={existing?"Edit day off":"Add day off"} saveLabel="Save day off" onClose={onClose} fields={[
-    {name:"helperId",label:"Helper",value:existing?.helperId ?? "",required:true,options:[{value:"",label:"Choose a helper"},...helpers.map(h=>({value:h.id,label:h.name}))]},
+    {name:"helperId",label:"Helper",value:existing?.helperId ?? "",required:true,options:[{value:"",label:"Choose a helper"},...helpers.filter(h=>!h.archived||h.id===existing?.helperId).map(h=>({value:h.id,label:h.name}))]},
     {name:"date",label:"Date",type:"date",value:existing?.date ?? initialDate ?? today,required:true},
     {name:"note",label:"Note (optional)",value:existing?.note},
     ...(existing?[{name:"status",label:"Status",value:existing.cancelled?"cancelled":"off",options:[{value:"off",label:"Day off"},{value:"cancelled",label:"Cancelled"}]}]:[]),
@@ -43,9 +42,9 @@ function WholeWeekForm({week,paddocks,initialPaddock,onClose,onSaved}:{week:stri
     }
   }}>
     <div className="crew-editor-heading"><h3 ref={heading} tabIndex={-1}>Assign whole week</h3><button type="button" className="button secondary small" disabled={saving||uncertain} onClick={onClose}>Cancel</button></div>
-    <p><strong>{dateLabel(week)} – {dateLabel(dates[6])}</strong> · Monday to Sunday · AM, Lunch and PM</p>
+    <p><strong>{dateLabel(week)} – {dateLabel(dates[6])}</strong> · Monday to Sunday · Full day</p>
     <label className="schedule-week-paddock">Paddock<select value={paddock} required disabled={saving||uncertain} onChange={e=>setPaddock(e.target.value)}><option value="">Choose a paddock</option>{paddocks.map(p=><option key={p}>{p}</option>)}</select></label>
-    <fieldset disabled={saving||uncertain} className="schedule-helper-picker"><legend>Choose one or more helpers</legend><div className="schedule-helper-options">{helpers.map(h=>{
+    <fieldset disabled={saving||uncertain} className="schedule-helper-picker"><legend>Choose one or more helpers</legend><div className="schedule-helper-options">{helpers.filter(h=>!h.archived).map(h=>{
       const off=offDates(h.id),chosen=selected.includes(h.id);
       return <button type="button" key={h.id} aria-pressed={chosen} className={`schedule-helper-option${chosen?" selected":""}`} onClick={()=>setSelected(ids=>chosen?ids.filter(id=>id!==h.id):[...ids,h.id])}><strong>{h.name}</strong><span>{chosen?"Selected":"Select helper"}</span><small>{off.length?`Day${off.length>1?"s":""} off: ${off.map(d=>dateLabel(d,{weekday:"short",month:"short",day:"numeric"})).join(", ")}`:"Available all week"}</small></button>;
     })}</div></fieldset>
@@ -63,6 +62,8 @@ export function CrewEditor({initialDate,onWeekChange}:{initialDate:string;onWeek
   const [editingOff,setEditingOff]=useState<DayOff|"new"|null>(null);
   const [assigningWeek,setAssigningWeek]=useState<string|null>(null);
   const [message,setMessage]=useState("");
+  const activeHelpers=helpers.filter(h=>!h.archived);
+  const archivedHelpers=helpers.filter(h=>h.archived);
   const dates=Array.from({length:7},(_,i)=>offsetDate(week,i));
   const on=(date:string,paddock:string)=>shifts.filter(s=>!s.cancelled&&s.date===date&&s.paddock===paddock);
   const helperName=(id:string)=>helpers.find(h=>h.id===id)?.name??"Unknown helper";
@@ -74,7 +75,7 @@ export function CrewEditor({initialDate,onWeekChange}:{initialDate:string;onWeek
   async function assign(date:string,paddock:string,helperId:string) {
     if (!helperId || isOff(helperId,date)) return;
     setMessage("");
-    if(await saveCrewAssignments({dates:[date],paddock,helperIds:[helperId],action:"assign",beforeShifts:shifts,beforeDaysOff:daysOff})) setMessage(`${helperName(helperId)} assigned to ${paddock} for AM, Lunch and PM on ${dateLabel(date)}.`);
+    if(await saveCrewAssignments({dates:[date],paddock,helperIds:[helperId],action:"assign",beforeShifts:shifts,beforeDaysOff:daysOff})) setMessage(`${helperName(helperId)} assigned to ${paddock} for the full day on ${dateLabel(date)}.`);
   }
   async function unassign(date:string,paddock:string,helperId:string) {
     setMessage("");
@@ -84,7 +85,8 @@ export function CrewEditor({initialDate,onWeekChange}:{initialDate:string;onWeek
     <div className="crew-editor-heading"><h2>Edit schedule</h2><button className="button" disabled={locked} onClick={()=>setEditingHelper("new")}>Add helper</button></div>
     <p className="workspace-notice">Names here are for the rota. Adding a name does not create a login or send an email.</p>
     {editingHelper && <HelperForm key={editingHelper==="new"?"new":editingHelper.id} existing={editingHelper==="new"?undefined:editingHelper} onClose={()=>setEditingHelper(null)}/>}
-    <div className="helper-chips">{helpers.map(h=><button className="button secondary small" disabled={locked} key={h.id} onClick={()=>setEditingHelper(h)}>Edit {h.name}</button>)}</div>
+    <div className="helper-chips">{activeHelpers.map(h=><button className="button secondary small" disabled={locked} key={h.id} onClick={()=>setEditingHelper(h)}>Edit / archive {h.name}</button>)}</div>
+    {!!archivedHelpers.length&&<details className="archived-helpers"><summary>Archived helpers ({archivedHelpers.length})</summary><p className="muted">Past records and existing assignments are kept. Edit a helper and choose Active to restore them.</p><div className="helper-chips">{archivedHelpers.map(h=><button className="button secondary small" disabled={locked} key={h.id} onClick={()=>setEditingHelper(h)}>Edit / restore {h.name}</button>)}</div></details>}
     <section className="panel">
       <div className="board-toolbar schedule-toolbar">
         <button className="button secondary" disabled={locked} onClick={()=>chooseWeek(offsetDate(week,-7))}>Previous week</button>
@@ -92,21 +94,20 @@ export function CrewEditor({initialDate,onWeekChange}:{initialDate:string;onWeek
         <button className="button secondary" disabled={locked} onClick={()=>chooseWeek(offsetDate(week,7))}>Next week</button>
         <button className="button secondary" disabled={locked} onClick={()=>chooseWeek(today)}>This week</button>
         <label>Find paddock or helper<input value={search} onChange={e=>setSearch(e.target.value)}/></label>
-        <button className="button" disabled={locked||!helpers.length} onClick={()=>{setMessage("");setAssigningWeek("");}}>Assign whole week</button>
+        <button className="button" disabled={locked||!activeHelpers.length} onClick={()=>{setMessage("");setAssigningWeek("");}}>Assign whole week</button>
       </div>
       {assigningWeek!==null&&<WholeWeekForm week={week} paddocks={paddocks} initialPaddock={assigningWeek} onClose={()=>setAssigningWeek(null)} onSaved={text=>{setAssigningWeek(null);setMessage(text);}}/>}
-      <p className="padded muted">Assign a team for the whole week, then adjust individual days below. Each new assignment covers AM, Lunch and PM. Use × beside a name to remove that helper for that day. Changes save online.</p>
+      <p className="padded muted">All assignments are for the full day. Assign a team for the whole week, then adjust individual days below. Use × beside a name to remove that helper for that day. Changes save online.</p>
       {message&&<p className="padded schedule-saved" role="status">{message}</p>}
       {!helpers.length ? <Empty>Choose Add helper above to start the weekly schedule.</Empty> : <div className="schedule-scroll"><table className="schedule-table"><thead><tr><th scope="col">Paddock</th>{dates.map(date=><th scope="col" key={date}>{dateLabel(date,{weekday:"short",month:"short",day:"numeric"})}</th>)}</tr></thead><tbody>
-        {visible.map(paddock=><tr key={paddock}><th scope="row">{paddock}<button type="button" className="text-button schedule-week-link" aria-label={`Assign whole week · ${paddock}`} disabled={locked} onClick={()=>{setMessage("");setAssigningWeek(paddock);}}>Assign whole week</button></th>{dates.map(date=>{
+        {visible.map(paddock=><tr key={paddock}><th scope="row">{paddock}<button type="button" className="text-button schedule-week-link" aria-label={`Assign whole week · ${paddock}`} disabled={locked||!activeHelpers.length} onClick={()=>{setMessage("");setAssigningWeek(paddock);}}>Assign whole week</button></th>{dates.map(date=>{
           const team=on(date,paddock);
           const teamIds=[...new Set(team.map(s=>s.helperId))];
-          const available=helpers.filter(h=>!team.some(s=>s.helperId===h.id));
+          const available=activeHelpers.filter(h=>!team.some(s=>s.helperId===h.id));
           return <td key={date} className={date===today?"schedule-today":undefined}>
             <div className="schedule-team">{teamIds.length ? teamIds.map(id=>{
-              const rounds=ROUNDS.filter(r=>team.some(s=>s.helperId===id&&s.period===r));
               return <div className="schedule-person" key={id}>
-                <span>{helperName(id)}{rounds.length<ROUNDS.length&&<><small className="schedule-partial">{rounds.join(" & ")} only</small><button type="button" className="text-button schedule-full-day" disabled={locked||isOff(id,date)} aria-label={`Make full day · ${helperName(id)} · ${paddock} · ${date}`} onClick={()=>void assign(date,paddock,id)}>Make full day</button></>}{isOff(id,date)&&<small className="schedule-warning">Day off — review cover</small>}</span>
+                <span>{helperName(id)}{helpers.find(h=>h.id===id)?.archived&&<small className="muted">Archived helper</small>}{isOff(id,date)&&<small className="schedule-warning">Day off — review cover</small>}</span>
                 <button type="button" className="schedule-remove" disabled={locked} aria-label={`Remove ${helperName(id)} from ${paddock} · ${date}`} onClick={()=>void unassign(date,paddock,id)}>×</button>
               </div>;
             }):<span className="muted">Unassigned</span>}</div>
@@ -118,7 +119,7 @@ export function CrewEditor({initialDate,onWeekChange}:{initialDate:string;onWeek
       </tbody></table></div>}
     </section>
     <section className="panel">
-      <div className="panel-heading"><h2>Days off this week</h2><button className="button secondary" disabled={locked||!helpers.length} onClick={()=>setEditingOff("new")}>Add day off</button></div>
+      <div className="panel-heading"><h2>Days off this week</h2><button className="button secondary" disabled={locked||!activeHelpers.length} onClick={()=>setEditingOff("new")}>Add day off</button></div>
       {editingOff&&<DayOffForm key={editingOff==="new"?"new":editingOff.id} existing={editingOff==="new"?undefined:editingOff} initialDate={today>=week&&today<=dates[6]?today:week} onClose={()=>setEditingOff(null)}/>}
       {weekOff.length ? <div className="padded">{weekOff.map(off=><div className="day-off-row" key={off.id}><span><strong>{helperName(off.helperId)}</strong> · {dateLabel(off.date)}{off.note&&" · "+off.note}</span><button className="text-button" disabled={locked} onClick={()=>setEditingOff(off)}>Edit day off</button></div>)}</div>:<Empty>No days off recorded for this week.</Empty>}
     </section>

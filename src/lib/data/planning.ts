@@ -16,6 +16,7 @@ export type CrewAssignmentChange = {
 // compared, so unrelated fresh edits and other teammates are preserved.
 export function changeCrewAssignments(data:WorkspaceData, change:CrewAssignmentChange):WorkspaceData {
   const dates=new Set(change.dates),helpers=new Set(change.helperIds);
+  if(change.action==="assign"&&data.helpers.some(h=>helpers.has(h.id)&&h.archived))throw new Error("Restore the archived helper before adding new assignments.");
   if(!dates.size||dates.size>7||!helpers.size||!change.paddock.trim()||![...helpers].every(id=>data.helpers.some(h=>h.id===id)))throw new Error("Choose a paddock and at least one helper.");
   const inScope=(row:ShiftAssignment)=>dates.has(row.date)&&helpers.has(row.helperId)&&row.paddock===change.paddock;
   const same=(a:{id:string}[],b:{id:string}[])=>JSON.stringify([...a].sort((x,y)=>x.id.localeCompare(y.id)))===JSON.stringify([...b].sort((x,y)=>x.id.localeCompare(y.id)));

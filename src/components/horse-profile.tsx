@@ -9,8 +9,10 @@ import { HorseForm } from "./horse-form";
 import { CarePlan } from "./care-plan";
 import { History } from "./history";
 import { Calendar } from "./calendar";
-import { age, dateLabel, instructionState, isoWeek } from "@/lib/dates";
+import { age, dateLabel, instructionState } from "@/lib/dates";
 import { farrierDateLabel } from "@/lib/dates";
+import { currentSpecialCare } from "@/lib/care-summary";
+import { nextEventDate } from "@/lib/chores";
 const tabs = ["Overview", "Care", "Calendar", "History", "Photos", "Documents"];
 export function HorseProfile({
   id,
@@ -57,6 +59,7 @@ export function HorseProfile({
             {horse.birthDate ? `${age(horse.birthDate, today)} years` : "Age not entered"} · {horse.sex || "Sex not entered"} · {horse.breed || "Breed not entered"} · {horse.colour || "Colour not entered"}
           </p>
           <dl className="profile-facts">
+            <div className="horse-characteristics"><dt>Special characteristics</dt><dd>{horse.specialCharacteristics||"Not entered"}</dd></div>
             <div>
               <dt>Owner</dt>
               <dd>{horse.owner.name || "Not entered"}</dd>
@@ -157,10 +160,10 @@ export function HorseProfile({
             <div>
               <section className="panel special">
                 <div className="panel-heading">
-                  <h2>Special instructions</h2>
+                  <h2>Special care</h2><button className="text-button" onClick={()=>setTab("Care")}>Edit in Care</button>
                 </div>
                 <p className="padded">
-                  {horse.specialInstructions || "None recorded."}
+                  {currentSpecialCare(horse,today) || "No current special care."}
                 </p>
               </section>
               <section className="panel">
@@ -169,9 +172,10 @@ export function HorseProfile({
                 </div>
                 <EventList
                   events={events
-                    .filter((e) => !e.cancelled && e.horseId === id && (e.farrierWeekOnly?isoWeek(e.date).end:e.date) >= today)
-                    .sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))
+                    .filter((e) => !e.cancelled && e.horseId === id && nextEventDate(e,today))
+                    .sort((a,b)=>((nextEventDate(a,today)??"")+a.time).localeCompare((nextEventDate(b,today)??"")+b.time))
                     .slice(0, 3)}
+                  fromDate={today}
                 />
               </section>
               <section className="panel">

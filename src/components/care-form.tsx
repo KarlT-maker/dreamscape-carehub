@@ -51,6 +51,7 @@ export function CareForm({
     schedule: existing?.schedule ?? "AM & PM",
     instructions: existing?.instructions ?? "",
     effectiveStart: today,
+    effectiveEnd: existing?.effectiveEnd ?? "",
   });
 
   const set = <K extends keyof CareDraft>(key: K, value: CareDraft[K]) =>
@@ -64,7 +65,7 @@ export function CareForm({
       ? offsetDate(draft.effectiveStart, -1)
       : null;
 
-  const valid = draft.name.trim() && draft.amount.trim();
+  const valid = draft.name.trim() && draft.amount.trim() && (!draft.effectiveEnd || draft.effectiveEnd>=draft.effectiveStart);
 
   return (
     <form
@@ -136,6 +137,12 @@ export function CareForm({
         </label>
 
         <label className="care-form-wide">
+          Last day (optional)
+          <input type="date" value={draft.effectiveEnd??""} min={draft.effectiveStart} onChange={e=>set("effectiveEnd",e.target.value)}/>
+          <small>Included in the plan through this day. Leave blank for ongoing care.</small>
+        </label>
+
+        <label className="care-form-wide">
           How it&rsquo;s given
           <textarea
             rows={2}
@@ -178,6 +185,7 @@ export function CareForm({
           — the care plan keeps both.
         </p>
       )}
+      {draft.effectiveEnd&&draft.effectiveEnd<draft.effectiveStart&&<p className="workspace-error" role="alert">The last day must be on or after the start date.</p>}
 
       <div className="care-form-actions">
         <button className="button" type="submit" disabled={!valid || saving || uncertain}>

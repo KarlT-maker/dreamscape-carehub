@@ -1,20 +1,22 @@
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
-import {mkdtempSync,mkdirSync,copyFileSync,cpSync} from 'node:fs';
+import {mkdtempSync,mkdirSync,copyFileSync,cpSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {resolve,dirname} from 'node:path';
 import {changeCrewAssignments} from '../src/lib/data/planning.ts';
+import {ROSTER,horseId as rosterHorseId} from '../src/lib/data/roster.ts';
 const php=process.env.PHP_BINARY;
 if (!php) throw new Error('Set PHP_BINARY to the PHP executable with PDO SQLite available.');
 const root=resolve(import.meta.dirname,'..');
 const temp=mkdtempSync(resolve(tmpdir(),'carehub-http-test-'));
 mkdirSync(resolve(temp,'carehub/api'),{recursive:true});
 cpSync(resolve(root,'server'),resolve(temp,'carehub/api'),{recursive:true});
-copyFileSync(resolve(root,'dist/siteground/carehub/api/seed.json'),resolve(temp,'carehub/api/seed.json'));
+writeFileSync(resolve(temp,'carehub/api/seed.json'),JSON.stringify({schema:1,revision:0,savedAt:'',mode:'roster',data:{horses:ROSTER.map(row=>({id:rosterHorseId(row.name),name:row.name,location:row.paddock,status:'Active',sex:'',breed:'',colour:'',birthDate:'',arrivalDate:'',owner:{id:`owner-${rosterHorseId(row.name)}`,name:''},specialInstructions:''})),care:[],tasks:[],events:[],history:[],helpers:[],shifts:[],daysOff:[]},completions:{}}));
 copyFileSync(resolve(root,'tests/wordpress-fixture.php'),resolve(temp,'wp-load.php'));
 const port=19131;
 const host=`http://127.0.0.1:${port}`;
-const server=spawn(php,['-d',`extension_dir=${resolve(dirname(php),'ext')}`,'-d','extension=pdo_sqlite','-S',`127.0.0.1:${port}`,'-t',temp],{stdio:['ignore','ignore','pipe']});
+const extensions=process.platform==='win32'?['-d',`extension_dir=${resolve(dirname(php),'ext')}`,'-d','extension=pdo_sqlite']:[];
+const server=spawn(php,[...extensions,'-S',`127.0.0.1:${port}`,'-t',temp],{stdio:['ignore','ignore','pipe']});
 let logs='';server.stderr.on('data',x=>logs+=x);
 async function call(action,{role='admin',body,nonce='test-only-nonce',origin=host}={}) {
   const r=await fetch(`${host}/carehub/api/index.php?action=${action}`,{method:body ? 'POST':'GET',headers:{'X-Test-Role':role,'Content-Type':'application/json','Origin':origin,'X-Barn-Nonce':nonce},body:body ? JSON.stringify(body):undefined});
@@ -129,6 +131,25 @@ try {
   next={...saved,data:changeCrewAssignments(saved.data,{dates:['2026-11-04'],paddock:'Test field',helperIds:['helper1'],action:'remove',beforeShifts:saved.data.shifts,beforeDaysOff:saved.data.daysOff})};
   r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});
   check(r.status===200 && r.value.snapshot.data.shifts.filter(s=>dates.includes(s.date)&&!s.cancelled).length===39 && r.value.snapshot.data.shifts.filter(s=>s.date==='2026-11-04'&&s.helperId==='helper2'&&!s.cancelled).length===3,'changing one day preserves the teammate and all other days');
+  saved=r.value.snapshot;next=structuredClone(saved);
+  Object.assign(next.data.horses[0],{specialCharacteristics:'Old scar',specialInstructions:'Check blanket',specialCareStart:'2026-10-29',specialCareEnd:'2026-10-30'});
+  next.data.care.push({id:'ending-med',horseId,kind:'medication',name:'Test only',dose:'Test amount',schedule:'AM',instructions:'',effectiveStart:'2026-10-29',effectiveEnd:'2026-10-30'});
+  next.data.events.push({id:'repeating-chore',horseId:'',date:'2026-10-28',time:'',type:'Chore',provider:'',reason:'Check troughs',notes:'Test only',repeat:'weekly',repeatDays:[3],repeatUntil:'2026-11-30'});
+  next.data.helpers.find(h=>h.id==='helper1').archived=true;
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});
+  check(r.status===200,'helpers can save end dates, characteristics, recurring barn chores and helper archive status together');
+  assert.deepEqual(r.value.snapshot.data.shifts,saved.data.shifts);saved=r.value.snapshot;
+  r=await call('workspace',{role:'owner'});assert.deepEqual(r.value.snapshot.data,saved.data);check(true,'another account receives all new fields without losing assignments or care');
+  next=structuredClone(saved);delete next.data.horses[0].specialCharacteristics;delete next.data.horses[0].specialCareStart;delete next.data.horses[0].specialCareEnd;next.data.horses[0].colour='Updated by old form';
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});
+  check(r.status===200&&r.value.snapshot.data.horses[0].specialCharacteristics==='Old scar'&&r.value.snapshot.data.horses[0].specialCareEnd==='2026-10-30','an older open horse form cannot erase the new profile fields');
+  saved=r.value.snapshot;next=structuredClone(saved);next.data.horses[0].specialCareEnd='';
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});
+  check(r.status===200&&r.value.snapshot.data.horses[0].specialCareEnd==='','a current form can intentionally clear an optional special-care end date');
+  saved=r.value.snapshot;next=structuredClone(saved);next.data.shifts.push({id:'archived-new',helperId:'helper1',date:'2026-12-01',period:'AM',paddock:'Test field'});
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});check(r.status===422,'archived helpers cannot receive new assignments from an older screen');
+  next=structuredClone(saved);next.data.events.find(e=>e.id==='repeating-chore').repeatDays=[];
+  r=await call('save',{role:'tester',body:{revision:saved.revision,requestId:crypto.randomUUID(),snapshot:next}});check(r.status===422,'an invalid repeating chore cannot change shared data');
   console.log(`${checks} HTTP integration checks passed against the PHP API with a local WordPress/SQLite fixture.`);
 }catch(e){console.error(logs.slice(-5000));throw e;}
 finally{server.kill();}
