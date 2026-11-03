@@ -5,6 +5,11 @@ import { Shell } from "@/components/shell";
 export const metadata: Metadata = {
   title: "BarnCareHub",
   description: "Daily horse care at Dreamscape Ranch",
+  ...(process.env.NEXT_PUBLIC_BARN_SHARED_API ? {
+    manifest: "/carehub/manifest.webmanifest",
+    appleWebApp: { capable: true, title: "CareHub" },
+    icons: { apple: "/carehub/install/icon-180.png" },
+  } : {}),
 };
 export default function RootLayout({
   children,

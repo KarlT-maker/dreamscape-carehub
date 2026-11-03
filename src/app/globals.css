@@ -2104,6 +2104,9 @@ body.full-board-mode .fb-grid {
 
 .login-page { max-width: 620px; margin: 8vh auto; padding: 20px; }
 .login-page .panel { padding: 32px; }
+.topbar-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: .5rem; }
+@media (max-width: 420px) { .topbar-actions .badge { display: none; } }
+@media (display-mode: standalone) { .install-link { display: none; } }
 .access-application { margin: 1.5rem 0; }
 .access-application fieldset { border: 0; padding: 0; margin: 0; }
 .access-application label { display: grid; gap: .35rem; margin-top: .75rem; }

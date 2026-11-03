@@ -8,11 +8,12 @@ execFileSync(process.execPath, ['node_modules/next/dist/bin/next', 'build', '--w
 const destination = resolve(root, 'dist/siteground/carehub');
 mkdirSync(destination, {recursive:true});
 cpSync(resolve(root,'out'), destination, {recursive:true});
+cpSync(resolve(root,'mobile'), destination, {recursive:true});
 cpSync(resolve(root,'server'), resolve(destination,'api'), {recursive:true});
 const seed = {schema:1,revision:0,savedAt:'',mode:'roster',data:{horses:ROSTER.map(row=>({id:horseId(row.name),name:row.name,location:row.paddock,status:'Active',sex:'',breed:'',colour:'',birthDate:'',arrivalDate:'',owner:{id:`owner-${horseId(row.name)}`,name:''},specialInstructions:''})),care:[],tasks:[],events:[],history:[],helpers:[],shifts:[],daysOff:[]},completions:{}};
 writeFileSync(resolve(destination,'api/seed.json'), JSON.stringify(seed));
 writeFileSync(resolve(destination,'.htaccess'), 'Options -Indexes\n<IfModule mod_headers.c>\nHeader set X-Robots-Tag "noindex, nofollow"\n</IfModule>\n');
-const files = ['src','server'].flatMap(dir=>readdirSync(resolve(root,dir),{recursive:true,withFileTypes:true}).filter(e=>e.isFile()).map(e=>resolve(e.parentPath,e.name))).sort();
+const files = ['src','server','mobile'].flatMap(dir=>readdirSync(resolve(root,dir),{recursive:true,withFileTypes:true}).filter(e=>e.isFile()).map(e=>resolve(e.parentPath,e.name))).sort();
 const hash = createHash('sha256'); for (const file of files) hash.update(readFileSync(file));
 writeFileSync(resolve(destination,'build-info.json'), JSON.stringify({sourceHash:hash.digest('hex'),builtAt:new Date().toISOString()}));
 console.log(`SiteGround files ready: ${destination}`);

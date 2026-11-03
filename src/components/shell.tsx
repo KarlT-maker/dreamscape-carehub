@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   LogOut,
   ClipboardList,
+  Smartphone,
 } from "lucide-react";
 const boardLinks = [
   { href: "/boards/full", label: "Dreamscape horse summary", icon: LayoutGrid },
@@ -85,7 +86,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span>
             Dreamscape Ranch <span className="muted">/ Care & wellbeing</span>
           </span>
-          <span className="badge" role="status">{saving ? "Saving…" : shared ? "Shared beta" : mode === "examples" ? "Example roster" : "Practice workspace"}</span>
+          <div className="topbar-actions">
+            {shared && <a className="button secondary small install-link" href="/carehub/install/"><Smartphone size={16} aria-hidden="true"/>Add to my phone</a>}
+            <span className="badge" role="status">{saving ? "Saving…" : shared ? "Shared beta" : mode === "examples" ? "Example roster" : "Practice workspace"}</span>
+          </div>
         </header>
         <main id="main">{!shared && <p className="workspace-notice">For shared saving, open the <a href="https://dreamscaperanch.com/carehub/">ranch’s online beta</a>. Entries made here stay on this device. Download a backup in Administration before bringing existing records across.</p>}{storageError && <div className="workspace-error" role="alert">{storageError} {uncertain && <button className="button" disabled={saving} onClick={() => void retrySave()}>Check save</button>}</div>}{mode === "examples" && <p className="workspace-notice">Example data: care, profile and staff details are invented. <Link href="/administration">Clear examples or undo</Link></p>}{children}</main>
         <footer>

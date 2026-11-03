@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#183b36">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="CareHub">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" href="mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="guide.css">
+  <script src="guide.js" defer></script>
+  <title>Add CareHub to my phone · Dreamscape Ranch</title>
+</head>
+<body>
+  <main>
+    <header><img src="mark.svg" width="54" height="54" alt=""><span>Dreamscape Ranch<br><strong>Barn CareHub</strong></span></header>
+    <h1>Add CareHub to your phone</h1>
+    <p>Open the shared barn from an icon on your home screen.</p>
+    <section class="desktop" id="scan">
+      <img src="phone-qr.svg" width="145" height="145" alt="QR code for the CareHub phone setup page">
+      <div><h2>Scan with your phone</h2><p>Point your phone’s camera at the square and tap the link that appears.</p>
+      <button id="copy-link" type="button" hidden>Copy link for a helper</button>
+      <p id="copy-status" role="status"></p></div>
+    </section>
+    <section id="native" hidden>
+      <h2>Install on this phone</h2>
+      <button type="button" id="install">Install CareHub</button>
+    </section>
+    <p id="install-status" role="status"></p>
+    <section class="instructions" id="iphone"><h2>iPhone or iPad</h2>
+      <ol><li>In <strong>Safari</strong>, open the <a href="../">CareHub home page</a>.</li>
+      <li>Tap <strong>Share</strong> (the square with an up arrow), then <strong>Add to Home Screen</strong>. Share may be under the <strong>More</strong> menu.</li>
+      <li>If offered, turn on <strong>Open as Web App</strong>. Tap <strong>Add</strong>.</li></ol>
+    </section>
+    <section class="instructions" id="android"><h2>Android phone or tablet</h2>
+      <ol><li>In <strong>Chrome</strong>, open the <a href="../">CareHub home page</a>.</li>
+      <li>Tap the <strong>⋮</strong> menu and choose <strong>Add to Home screen</strong> or <strong>Install and create shortcut</strong>.</li>
+      <li>Choose <strong>Install</strong> if offered, or <strong>Create shortcut</strong> and then <strong>Add</strong>.</li></ol>
+    </section>
+    <footer><p>Use your own CareHub login. Connect to the internet to save barn records.</p><a href="../">Open CareHub <span aria-hidden="true">→</span></a></footer>
+  </main>
+</body>
+</html>
