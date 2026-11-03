@@ -6,7 +6,7 @@ type Application = {id: string; name: string; email: string; created: number};
 type HelperLogin = {id: number; name: string; email: string; canDelete: boolean; canResend: boolean};
 type StaffList = {requests: Application[]; helpers: HelperLogin[]; reviewEmail: string; myEmail: string; nonce: string};
 type Change =
-  | {choice: "notify-me"}
+  | {choice: "set-review-email"; email: string; beforeEmail: string}
   | {choice: "approve" | "decline"; requestId: string}
   | {choice: "delete" | "revoke" | "resend"; userId: number; email: string};
 
@@ -48,6 +48,7 @@ export function StaffAccess() {
   const [error,setError] = useState("");
   const [message,setMessage] = useState("");
   const [removing,setRemoving] = useState<HelperLogin | null>(null);
+  const [editingEmail,setEditingEmail] = useState(false);
   const inFlight = useRef(true);
   async function refresh() {
     if (inFlight.current) return;
@@ -70,6 +71,7 @@ export function StaffAccess() {
     try {
       const result: StaffList & {message: string} = await sharedRequest("staff-change",list.nonce,body);
       setList(result); setMessage(result.message); setRemoving(null);
+      if (body.choice === "set-review-email") setEditingEmail(false);
     } catch (error) {
       setError(failure(error) + " Refresh the list to check its current status.");
     } finally {inFlight.current=false; setBusy(false);}
@@ -83,8 +85,18 @@ export function StaffAccess() {
       {message && <p role="status" className="workspace-notice">{message}</p>}
       {list && <>
         {list.reviewEmail ? <p>New helpers can choose <strong>Request access</strong> on the CareHub sign-in page. Request alerts go to <strong>{list.reviewEmail}</strong>.</p>
-          : <p>Turn on access requests so helpers can apply from the CareHub sign-in page. Requests will go to your account email, <strong>{list.myEmail}</strong>.</p>}
-        {list.reviewEmail !== list.myEmail && <button className="button secondary" disabled={busy} onClick={()=>change({choice:"notify-me"})}>{list.reviewEmail ? "Send request alerts to my email" : "Turn on access requests"}</button>}
+          : <p>Choose where CareHub should send the alert when someone asks to join. Only a signed-in barn administrator can approve a helper.</p>}
+        {list.reviewEmail && !editingEmail ? <button className="button secondary small" disabled={busy} onClick={()=>setEditingEmail(true)}>Change alert email</button> :
+          <form className="access-application" onSubmit={event=>{
+            event.preventDefault();
+            const email = String(new FormData(event.currentTarget).get("alertEmail") || "").trim();
+            void change({choice:"set-review-email",email,beforeEmail:list.reviewEmail});
+          }}>
+            <fieldset disabled={busy}><label>Send access requests to<input key={list.reviewEmail} name="alertEmail" type="email" required maxLength={254} defaultValue={list.reviewEmail || list.myEmail}/></label>
+              <div className="workspace-actions"><button className="button">{list.reviewEmail ? "Save alert email" : "Turn on access requests"}</button>
+              {list.reviewEmail && <button type="button" className="button secondary" onClick={()=>setEditingEmail(false)}>Cancel</button>}</div>
+            </fieldset>
+          </form>}
         <h3>Waiting for approval</h3>
         {list.requests.length === 0 && <p className="muted">No helpers are waiting.</p>}
         {list.requests.map(request=><article className="access-person" key={request.id}>

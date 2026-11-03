@@ -18,7 +18,7 @@ Users. Select the CareHub administrator role for barn owners and tester for staf
 Both roles lack website administration, content editing and user-management
 capabilities. CareHub administrators can reset, restore and undo barn records.
 In CareHub Administration, a barn owner can turn on helper access requests and
-receive new-request alerts at their own account email. Helpers enter their own
+choose the mailbox for new-request alerts. Helpers enter their own
 name and email on the sign-in screen. A pending request grants no permissions.
 Either barn owner can approve an application and send a WordPress password setup
 link, decline it, or delete a helper-only login and invalidate its sessions.

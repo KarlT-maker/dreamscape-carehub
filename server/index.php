@@ -26,7 +26,7 @@ $ready = (bool)get_option('barncarehub_installed_v1', false);
 $login = wp_login_url(home_url('/carehub/'));
 if (!in_array($method, ['GET','POST'], true)) bh_reply(['error'=>'Method not allowed.'], 405);
 if ($method === 'GET' && $action === 'session') {
-    $requestsOpen = $ready && (bool)get_option('barncarehub_review_owner', false);
+    $requestsOpen = $ready && (bool)get_option('barncarehub_review_email', false);
     bh_reply(['user'=>bh_allowed() ? bh_user() : null, 'nonce'=>bh_allowed() ? wp_create_nonce('barncarehub') : null, 'ready'=>$ready, 'ownerAccountsReady'=>get_role('barncarehub_admin') !== null, 'loginUrl'=>$login,
         'reviewLoginUrl'=>wp_login_url(home_url('/carehub/administration/#staff-access')),
         'requestNonce'=>$requestsOpen ? wp_create_nonce('barncarehub_request') : null]);

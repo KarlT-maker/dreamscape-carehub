@@ -4,7 +4,7 @@ defined('ABSPATH') || exit;
 
 const BH_HELPER_ROLE = 'barncarehub_tester';
 const BH_REQUESTS = 'barncarehub_pending_requests';
-const BH_REVIEWER = 'barncarehub_review_owner';
+const BH_REVIEW_EMAIL = 'barncarehub_review_email';
 
 function bh_staff_store(string $key, $value): void {
     if (!update_option($key, $value, false) && get_option($key) !== $value) {
@@ -29,12 +29,6 @@ function bh_staff_locked(callable $action) {
 function bh_pending_requests(): array {
     $cutoff = time() - 30 * DAY_IN_SECONDS;
     return array_filter(get_option(BH_REQUESTS, []), fn($request) => $request['created'] >= $cutoff);
-}
-
-function bh_reviewer() {
-    $user = get_userdata((int)get_option(BH_REVIEWER, 0));
-    if (!$user || !is_email($user->user_email)) return false;
-    return (user_can($user, 'barncarehub_admin') || user_can($user, 'manage_options')) ? $user : false;
 }
 
 function bh_staff_role_is_safe(): bool {
@@ -62,7 +56,6 @@ function bh_can_delete_login($user): bool {
 }
 
 function bh_staff_list(): array {
-    $reviewer = bh_reviewer();
     $helpers = [];
     foreach (get_users(['role'=>BH_HELPER_ROLE, 'orderby'=>'display_name', 'order'=>'ASC']) as $user) {
         if (!bh_only_helper($user)) continue;
@@ -70,7 +63,7 @@ function bh_staff_list(): array {
             'canDelete'=>bh_can_delete_login($user), 'canResend'=>(bool)get_user_meta($user->ID, 'barncarehub_application', true)];
     }
     return ['requests'=>array_values(bh_pending_requests()), 'helpers'=>$helpers,
-        'reviewEmail'=>$reviewer ? $reviewer->user_email : '', 'myEmail'=>wp_get_current_user()->user_email,
+        'reviewEmail'=>(string)get_option(BH_REVIEW_EMAIL, ''), 'myEmail'=>wp_get_current_user()->user_email,
         'nonce'=>wp_create_nonce('barncarehub')];
 }
 
@@ -94,8 +87,8 @@ function bh_request_access(array $body): array {
         throw new InvalidArgumentException('Enter your name and a valid email address.');
     }
     $notify = bh_staff_locked(function () use ($name, $email) {
-        $reviewer = bh_reviewer();
-        if (!$reviewer) throw new InvalidArgumentException('Access requests are closed. Please contact Karl or Lea.');
+        $recipient = (string)get_option(BH_REVIEW_EMAIL, '');
+        if (!is_email($recipient)) throw new InvalidArgumentException('Access requests are closed. Please contact Karl or Lea.');
         bh_check_request_limit();
         $requests = bh_pending_requests();
         $existing = get_user_by('email', $email);
@@ -105,7 +98,7 @@ function bh_request_access(array $body): array {
         $id = wp_generate_uuid4();
         $requests[$id] = ['id'=>$id,'name'=>$name,'email'=>$email,'created'=>time()];
         bh_staff_store(BH_REQUESTS, $requests);
-        return $reviewer->user_email;
+        return $recipient;
     });
     if ($notify) {
         // A failed notification never loses the stored application. No request personal data or action tokens in this link.
@@ -152,11 +145,14 @@ function bh_review_request(string $choice, string $id): string {
 
 function bh_change_staff(array $body): string {
     $choice = $body['choice'] ?? '';
-    if ($choice === 'notify-me') {
-        $user = wp_get_current_user();
-        if (!is_email($user->user_email)) throw new InvalidArgumentException('Your account needs a valid email address.');
-        bh_staff_store(BH_REVIEWER, (string)$user->ID);
-        return 'New access requests will go to your email.';
+    if ($choice === 'set-review-email') {
+        $address = is_string($body['email'] ?? null) ? trim($body['email']) : '';
+        if (strlen($address) > 254 || !is_email($address)) throw new InvalidArgumentException('Enter a valid address for request alerts.');
+        if (($body['beforeEmail'] ?? null) !== (string)get_option(BH_REVIEW_EMAIL, '')) {
+            throw new InvalidArgumentException('The alert email has changed. Refresh the list first.');
+        }
+        bh_staff_store(BH_REVIEW_EMAIL, $address);
+        return 'Access requests are open. New request alerts will go to ' . $address . '.';
     }
     if ($choice === 'approve' || $choice === 'decline') {
         return bh_review_request($choice, (string)($body['requestId'] ?? ''));

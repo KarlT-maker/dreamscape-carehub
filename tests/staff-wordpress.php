@@ -4,7 +4,7 @@ if (PHP_SAPI !== 'cli' || getenv('GITHUB_ACTIONS') !== 'true') exit(2);
 $root = getenv('RUNNER_TEMP') . '/wordpress';
 if ($argv[1] === 'install') define('WP_INSTALLING', true);
 require $root . '/wp-load.php';
-if (DB_NAME !== 'carehub_access_test' || !str_starts_with(home_url(), 'http://127.0.0.1:19134')) exit(2);
+if (DB_NAME !== 'carehub_access_test' || WP_HOME !== 'http://127.0.0.1:19134') exit(2);
 
 function test_cookie(int $id): string {
     $expires = time() + 1800;

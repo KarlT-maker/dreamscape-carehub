@@ -17,7 +17,7 @@ const config = {DB_NAME:'carehub_access_test',DB_USER:'root',DB_PASSWORD:'root',
 for (const key of ['AUTH_KEY','SECURE_AUTH_KEY','LOGGED_IN_KEY','NONCE_KEY','AUTH_SALT','SECURE_AUTH_SALT','LOGGED_IN_SALT','NONCE_SALT']) config[key] = randomBytes(36).toString('hex');
 writeFileSync(join(wp,'wp-config.php'), ['<?php', ...Object.entries(config).map(([key,value])=>
   'define('+phpString(key)+','+(value === true ? 'true' : phpString(value))+');'),
-  "$table_prefix='auth_test_';","define('ABSPATH',__DIR__.'/');","require ABSPATH.'wp-settings.php';"].join('\n'));
+  "$table_prefix='auth_test_';","if (!defined('ABSPATH')) define('ABSPATH',__DIR__.'/');","require ABSPATH.'wp-settings.php';"].join('\n'));
 mkdirSync(join(wp,'wp-content/mu-plugins'),{recursive:true});
 writeFileSync(join(wp,'wp-content/mu-plugins/intercept-test-mail.php'),"<?php\nadd_filter('pre_wp_mail', function($unused,$mail) { file_put_contents("+phpString(mailFile)+",json_encode($mail).PHP_EOL, FILE_APPEND | LOCK_EX); return true; },10,2);");
 const api = join(wp,'carehub/api');
@@ -53,12 +53,14 @@ try {
   const helper = await session(accounts.legacy);
   assert.equal((await call('staff-list','')).status,401);
   assert.equal((await call('staff-list',accounts.legacy)).status,403);
-  assert.equal((await decide({choice:'notify-me'},accounts.legacy,helper.nonce)).status,403);
-  assert.equal((await decide({choice:'notify-me'},accounts.owner,'fake')).status,403);
-  assert.equal((await call('staff-change',accounts.owner,{choice:'notify-me'},owner.nonce,'https://other.invalid')).status,403);
+  const configure = {choice:'set-review-email',email:'review-mailbox@example.invalid',beforeEmail:''};
+  assert.equal((await decide(configure,accounts.legacy,helper.nonce)).status,403);
+  assert.equal((await decide(configure,accounts.owner,'fake')).status,403);
+  assert.equal((await call('staff-change',accounts.owner,configure,owner.nonce,'https://other.invalid')).status,403);
   assert.equal((await session('')).requestNonce,null);
-  const opened=ok(await decide({choice:'notify-me'}));
-  assert.equal(opened.reviewEmail,'barn-owner@example.invalid');
+  const opened=ok(await decide(configure));
+  assert.equal(opened.reviewEmail,configure.email);
+  assert.equal((await decide(configure)).status,422);
   const anonymous = await session('');
   assert.ok(anonymous.requestNonce && !anonymous.user);
   const applicant = {name:'Test applicant',email:'applicant@example.invalid'};
