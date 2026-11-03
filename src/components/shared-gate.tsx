@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { BarnProvider } from "./provider";
 import { sharedRequest, type SharedSession, type SharedWorkspace } from "@/lib/shared";
+import { RequestAccess } from "./staff-access";
 export function SharedGate({children, today}: {children: React.ReactNode; today: string}) {
   const [session, setSession] = useState<SharedSession | null>(null);
   const [workspace, setWorkspace] = useState<SharedWorkspace | null>(null);
@@ -24,7 +25,8 @@ export function SharedGate({children, today}: {children: React.ReactNode; today:
       {session.user.canManageAccounts ? <button className="button" onClick={async () => { setBusy(true); setError(""); try { setWorkspace(await sharedRequest("initialize", session.nonce, {})); setSession({...session, ownerAccountsReady:true}); } catch { setError("Setup could not finish. Please try again."); } finally { setBusy(false); } }}>{session.ready ? "Enable administrator accounts" : "Open shared barn"}</button> : <p>Your website administrator needs to finish the first setup.</p>}
     </> : session ? <>
       <h2>Sign in to your barn</h2><p>Use your own approved account. Saved changes are shared with the rest of the team.</p>
-      <a className="button" href={session.loginUrl}>Sign in</a><p className="muted">Ask Karl or Lea for a BarnCareHub tester account. Your ordinary website visitor account does not grant access.</p>
+      <a className="button" href={window.location.pathname.includes("/administration") ? session.reviewLoginUrl ?? session.loginUrl : session.loginUrl}>Sign in</a>
+      {session.requestNonce ? <RequestAccess nonce={session.requestNonce}/> : <p className="muted">Contact Karl or Lea for helper access.</p>}
     </> : null}
     {error && <p role="alert" className="workspace-error">{error}</p>}
     {!busy && <button className="text-button" onClick={() => {setBusy(true); void open();}}>Check again</button>}

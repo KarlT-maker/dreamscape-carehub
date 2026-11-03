@@ -21,3 +21,10 @@ jobs:
       - run: php tests/server-validation.php
       - name: Test shared saving with synthetic records
         run: PHP_BINARY="$(command -v php)" node tests/server.integration.mjs
+      - name: Test access requests with WordPress and disposable helper accounts
+        run: |
+          sudo systemctl start mysql
+          mysql -uroot -proot -e 'CREATE DATABASE carehub_access_test'
+          curl --fail --silent --show-error --location --retry 2 https://wordpress.org/latest.tar.gz -o "$RUNNER_TEMP/carehub-wordpress.tar.gz"
+          tar -xzf "$RUNNER_TEMP/carehub-wordpress.tar.gz" -C "$RUNNER_TEMP"
+          node tests/staff-access.integration.mjs

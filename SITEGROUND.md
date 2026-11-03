@@ -17,12 +17,20 @@ are preserved. Website administrators create individual accounts using WordPress
 Users. Select the CareHub administrator role for barn owners and tester for staff.
 Both roles lack website administration, content editing and user-management
 capabilities. CareHub administrators can reset, restore and undo barn records.
-Account creation currently still requires the separate website administrator
-login. Email notifications and password entry are controlled by the human user.
+In CareHub Administration, a barn owner can turn on helper access requests and
+receive new-request alerts at their own account email. Helpers enter their own
+name and email on the sign-in screen. A pending request grants no permissions.
+Either barn owner can approve an application and send a WordPress password setup
+link, decline it, or delete a helper-only login and invalidate its sessions.
+Accounts with website content retain their website login when barn access is
+removed. Owner accounts and accounts with additional roles are protected.
+Access requests and logins are separate from the rota and barn data backups.
 
 Authentication uses existing WordPress sign-in/cookies. Every API read requires
 the custom capability or administrator capability except the public session
-status. Writes require the same-origin request and an authenticated nonce.
+status. The public application form only submits a rate-limited request.
+All writes check the origin and an action-specific nonce. Account decisions
+also require the barn administrator capability.
 The API is never cached. Confirm that host caching does not override no-store.
 
 Saves lock the dedicated workspace row and compare revisions before replacing

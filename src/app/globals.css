@@ -2104,6 +2104,13 @@ body.full-board-mode .fb-grid {
 
 .login-page { max-width: 620px; margin: 8vh auto; padding: 20px; }
 .login-page .panel { padding: 32px; }
+.access-application { margin: 1.5rem 0; }
+.access-application fieldset { border: 0; padding: 0; margin: 0; }
+.access-application label { display: grid; gap: .35rem; margin-top: .75rem; }
+.access-application input { padding: .65rem; min-width: 0; }
+#staff-access h3 { margin: 1.25rem 0 .4rem; }
+.access-person { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; padding: .75rem 0; border-top: 1px solid #dce3dc; overflow-wrap: anywhere; }
+.access-person .workspace-actions { margin: .25rem 0; }
 button:disabled { opacity: .55; cursor: wait; }
 
 .farrier-week-picker { padding: 20px; }

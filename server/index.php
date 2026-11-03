@@ -26,12 +26,17 @@ $ready = (bool)get_option('barncarehub_installed_v1', false);
 $login = wp_login_url(home_url('/carehub/'));
 if (!in_array($method, ['GET','POST'], true)) bh_reply(['error'=>'Method not allowed.'], 405);
 if ($method === 'GET' && $action === 'session') {
-    bh_reply(['user'=>bh_allowed() ? bh_user() : null, 'nonce'=>bh_allowed() ? wp_create_nonce('barncarehub') : null, 'ready'=>$ready, 'ownerAccountsReady'=>get_role('barncarehub_admin') !== null, 'loginUrl'=>$login]);
+    $requestsOpen = $ready && (bool)get_option('barncarehub_review_owner', false);
+    bh_reply(['user'=>bh_allowed() ? bh_user() : null, 'nonce'=>bh_allowed() ? wp_create_nonce('barncarehub') : null, 'ready'=>$ready, 'ownerAccountsReady'=>get_role('barncarehub_admin') !== null, 'loginUrl'=>$login,
+        'reviewLoginUrl'=>wp_login_url(home_url('/carehub/administration/#staff-access')),
+        'requestNonce'=>$requestsOpen ? wp_create_nonce('barncarehub_request') : null]);
 }
-if (!bh_allowed()) bh_reply(['error'=>'Please sign in with a BarnCareHub account.', 'loginUrl'=>$login], 401);
+$publicRequest = $method === 'POST' && $action === 'request-access';
+if (!$publicRequest && !bh_allowed()) bh_reply(['error'=>'Please sign in with a BarnCareHub account.', 'loginUrl'=>$login], 401);
 if ($method === 'POST') {
     $expectedOrigin = (is_ssl() ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '');
-    if (($_SERVER['HTTP_ORIGIN'] ?? '') !== $expectedOrigin || !wp_verify_nonce($_SERVER['HTTP_X_BARN_NONCE'] ?? '', 'barncarehub')) bh_reply(['error'=>'Your sign-in needs refreshing. Reload before saving.'], 403);
+    $nonceAction = $publicRequest ? 'barncarehub_request' : 'barncarehub';
+    if (($_SERVER['HTTP_ORIGIN'] ?? '') !== $expectedOrigin || !wp_verify_nonce($_SERVER['HTTP_X_BARN_NONCE'] ?? '', $nonceAction)) bh_reply(['error'=>'Please refresh this page and try again.'], 403);
     if (!str_starts_with($_SERVER['CONTENT_TYPE'] ?? '', 'application/json')) bh_reply(['error'=>'JSON required.'], 415);
     if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 10000000) bh_reply(['error'=>'This backup is too large.'], 413);
 }
@@ -63,6 +68,10 @@ try {
         bh_reply(bh_public(bh_current($table)));
     }
     if (!$ready) bh_reply(['error'=>'The shared beta needs its first administrator setup.'], 503);
+    if ($publicRequest || in_array($action, ['staff-list','staff-change'], true)) {
+        require_once __DIR__ . '/staff-access.php';
+        bh_staff_dispatch($action, $method);
+    }
     if ($method === 'GET' && $action === 'workspace') bh_reply(bh_public(bh_current($table)));
     if ($method !== 'POST' || !in_array($action, ['save','replace','undo','logout'], true)) bh_reply(['error'=>'Unknown action.'], 404);
     if ($action === 'logout') { wp_logout(); bh_reply(['ok'=>true]); }

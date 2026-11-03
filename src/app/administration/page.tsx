@@ -3,9 +3,10 @@ import { useState } from "react";
 import { PageHeader } from "@/components/ui";
 import { useBarn } from "@/components/provider";
 import { validateSnapshot } from "@/lib/data/workspace";
+import { StaffAccess } from "@/components/staff-access";
 
 export default function Page() {
-  const { resetWorkspace, undoReset, canUndoReset, exportBackup, restoreBackup, savedAt, today, shared, isAdmin, canManageAccounts, saving, uncertain } = useBarn();
+  const { resetWorkspace, undoReset, canUndoReset, exportBackup, restoreBackup, savedAt, today, shared, isAdmin, saving, uncertain } = useBarn();
   const [pending, setPending] = useState<"blank" | "roster" | "examples" | "restore" | null>(null);
   const [backup, setBackup] = useState("");
   const [message, setMessage] = useState("");
@@ -19,7 +20,8 @@ export default function Page() {
     } catch { setError("The backup could not be downloaded. Your records have not been changed."); }
   }
   return <>
-    <PageHeader eyebrow="RANCH WORKSPACE" title="Administration" description="Backups and practice workspace controls" />
+    <PageHeader eyebrow="RANCH WORKSPACE" title="Administration" description={shared && isAdmin ? "Helper access and barn backups" : "Barn backups and workspace controls"} />
+    {shared && isAdmin && <StaffAccess/>}
     <section className="panel"><div className="panel-heading"><h2>Your saved records</h2></div><div className="padded">
       <p>{shared ? "Saved changes are kept online and shared with approved staff. Other open screens check for changes every 10 seconds. Wait for saving to finish before closing the page. Download backups for an extra copy." : "Your entries stay in this browser on this device when you refresh or close the page. They are not yet shared with other phones, tablets or computers. Clearing browser data can remove them, so download a backup after entering information you want to keep."}</p>
       <p className="muted">{savedAt ? `Last saved: ${new Date(savedAt).toLocaleString()}` : "The horse names and paddocks are ready. No care details have been entered yet."}</p>
@@ -30,7 +32,6 @@ export default function Page() {
         catch { setError("That file is not a valid BarnCareHub backup. Your current records have not changed."); }
       }} /></label>}</div>
     </div></section>
-    {shared && isAdmin && <section className="panel"><div className="panel-heading"><h2>Staff access</h2></div><p className="padded">Each person uses their own account. <strong>BarnCareHub testers</strong> can edit horses, care, appointments, history and the helper schedule. <strong>BarnCareHub administrators</strong> can also reset or restore shared records. These roles do not give control of the public website. {canManageAccounts ? <a href="/wp-admin/user-new.php" target="_blank" rel="noreferrer">Open website Users to manage accounts</a> : "Adding or changing accounts currently requires the separate website administrator login."}</p></section>}
     {isAdmin && <section className="panel"><div className="panel-heading"><h2>{shared ? "Clear or restore shared records" : "Clear or restore the practice workspace"}</h2></div><div className="padded">
       <p>Keep horse names and paddocks while clearing other profile details, care plans, appointments, history, crew and checkmarks. The previous workspace is kept so you can undo the last reset or restore.</p>
       <div className="workspace-actions">
