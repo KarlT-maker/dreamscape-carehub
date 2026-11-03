@@ -21,6 +21,13 @@ jobs:
       - run: php tests/server-validation.php
       - name: Test shared saving with synthetic records
         run: PHP_BINARY="$(command -v php)" node tests/server.integration.mjs
+  helper-access:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
       - name: Test access requests with WordPress and disposable helper accounts
         run: |
           sudo systemctl start mysql

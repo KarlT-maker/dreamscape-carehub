@@ -44,11 +44,11 @@ export function RequestAccess({nonce}: {nonce: string}) {
 
 export function StaffAccess() {
   const [list,setList] = useState<StaffList | null>(null);
-  const [busy,setBusy] = useState(false);
+  const [busy,setBusy] = useState(true);
   const [error,setError] = useState("");
   const [message,setMessage] = useState("");
   const [removing,setRemoving] = useState<HelperLogin | null>(null);
-  const inFlight = useRef(false);
+  const inFlight = useRef(true);
   async function refresh() {
     if (inFlight.current) return;
     inFlight.current = true; setBusy(true); setError("");
@@ -56,7 +56,14 @@ export function StaffAccess() {
     catch (error) {setError(failure(error));}
     finally {inFlight.current=false; setBusy(false);}
   }
-  useEffect(()=>{void refresh();},[]);
+  useEffect(()=>{
+    let active = true;
+    sharedRequest("staff-list")
+      .then(result=>{if (active) setList(result);})
+      .catch(error=>{if (active) setError(failure(error));})
+      .finally(()=>{if (active) {inFlight.current=false; setBusy(false);}});
+    return ()=>{active=false;};
+  },[]);
   async function change(body: Change) {
     if (!list || inFlight.current) return;
     inFlight.current=true; setBusy(true); setError(""); setMessage("");
