@@ -2104,6 +2104,12 @@ body.full-board-mode .fb-grid {
 
 .login-page { max-width: 620px; margin: 8vh auto; padding: 20px; }
 .login-page .panel { padding: 32px; }
+.new-helper-row { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: baseline; gap: .5rem; margin: .75rem 0; }
+.new-helper-buttons { display: flex; flex-wrap: wrap; gap: .5rem; }
+@media (max-width: 520px) {
+  .new-helper-buttons { flex-direction: column; align-items: stretch; max-width: 12rem; }
+}
+@media (max-width: 350px) { .new-helper-row { grid-template-columns: 1fr; } }
 .topbar-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: .5rem; }
 @media (max-width: 420px) { .topbar-actions .badge { display: none; } }
 @media (display-mode: standalone) { .install-link { display: none; } }

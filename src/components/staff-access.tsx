@@ -14,14 +14,20 @@ function failure(error: unknown) {
   return error instanceof Error ? error.message : "Please check your connection and try again.";
 }
 
-export function RequestAccess({nonce}: {nonce: string}) {
+export function RequestAccess({nonce,children}: {nonce: string; children: React.ReactNode}) {
   const [open,setOpen] = useState(false);
   const [sent,setSent] = useState(false);
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState("");
-  if (sent) return <p role="status">Thank you. New requests go to Karl or Lea for review. Once approved, check your email for a link to choose your password. If you already have a login, choose Sign in above.</p>;
-  if (!open) return <p>New helper? <button className="button secondary" onClick={()=>setOpen(true)}>Request access</button></p>;
-  return <form className="access-application" onSubmit={async event=>{
+  if (sent) return <><p role="status">Thank you. New requests go to Karl or Lea for review. Once approved, check your email for a link to choose your password. If you already have a login, choose Sign in above.</p>{children}</>;
+  if (!open) return <div className="new-helper-row">
+    <span>New helper?</span>
+    <div className="new-helper-buttons">
+      <button className="button secondary" onClick={()=>setOpen(true)}>Request access</button>
+      {children}
+    </div>
+  </div>;
+  return <><form className="access-application" onSubmit={async event=>{
     event.preventDefault();
     const fields = new FormData(event.currentTarget);
     setError(""); setBusy(true);
@@ -39,7 +45,7 @@ export function RequestAccess({nonce}: {nonce: string}) {
       <button className="button secondary" type="button" onClick={()=>setOpen(false)}>Cancel</button></div>
     </fieldset>
     {error && <p role="alert" className="workspace-error">{error}</p>}
-  </form>;
+  </form>{children}</>;
 }
 
 export function StaffAccess() {

@@ -17,6 +17,7 @@ export function SharedGate({children, today}: {children: React.ReactNode; today:
   }
   useEffect(() => { void open(); }, []);
   const ownerSetup = session?.user?.canManageAccounts && !session.ownerAccountsReady;
+  const phoneLink = <a className="button secondary install-link" href="/carehub/install/">Add to my phone</a>;
   if (session?.user && workspace && !ownerSetup) return <BarnProvider today={today} remote={{session, workspace}}>{children}</BarnProvider>;
   return <main className="login-page"><section className="panel padded">
     <p className="eyebrow">DREAMSCAPE RANCH</p><h1>BarnCareHub</h1>
@@ -26,8 +27,9 @@ export function SharedGate({children, today}: {children: React.ReactNode; today:
     </> : session ? <>
       <h2>Sign in to your barn</h2><p>Use your own approved account. Saved changes are shared with the rest of the team.</p>
       <a className="button" href={window.location.pathname.includes("/administration") ? session.reviewLoginUrl ?? session.loginUrl : session.loginUrl}>Sign in</a>
-      {session.requestNonce ? <RequestAccess nonce={session.requestNonce}/> : <p className="muted">Contact Karl or Lea for helper access.</p>}
-      <p><a className="button secondary small install-link" href="/carehub/install/">Add to my phone</a></p>
+      {session.requestNonce ? <RequestAccess nonce={session.requestNonce}>{phoneLink}</RequestAccess> : <>
+        <p className="muted">Contact Karl or Lea for helper access.</p>{phoneLink}
+      </>}
     </> : null}
     {error && <p role="alert" className="workspace-error">{error}</p>}
     {!busy && <button className="text-button" onClick={() => {setBusy(true); void open();}}>Check again</button>}
