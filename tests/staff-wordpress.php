@@ -13,7 +13,9 @@ function test_cookie(int $id): string {
 }
 if ($argv[1] === 'install') {
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-    $installation = wp_install('Test ranch','site-owner','site@example.invalid',false,'',wp_generate_password());
+    wp_install('Test ranch','site-owner','site@example.invalid',false,'',wp_generate_password());
+    echo 'true';
+} elseif ($argv[1] === 'fixtures') {
     add_role('barncarehub_admin','Barn owner',['read'=>true,'barncarehub_admin'=>true,'barncarehub_edit'=>true]);
     add_role('barncarehub_tester','Helper',['read'=>true,'barncarehub_edit'=>true]);
     $create = fn($name,$role) => wp_insert_user(['user_login'=>$name,'display_name'=>$name,'user_email'=>$name.'@example.invalid','user_pass'=>wp_generate_password(),'role'=>$role]);
@@ -24,7 +26,7 @@ if ($argv[1] === 'install') {
     (new WP_User($mixed))->add_role('editor');
     $contentOwner = $create('website-author','barncarehub_tester');
     wp_insert_post(['post_title'=>'Existing website content','post_status'=>'publish','post_author'=>$contentOwner]);
-    echo wp_json_encode(['site'=>test_cookie($installation['user_id']), 'owner'=>test_cookie($owner),
+    echo wp_json_encode(['site'=>test_cookie(get_user_by('login','site-owner')->ID), 'owner'=>test_cookie($owner),
         'other'=>test_cookie($otherOwner),'legacy'=>test_cookie($legacy),'ownerId'=>$owner,'mixedId'=>$mixed]);
 } else {
     $input = json_decode(stream_get_contents(STDIN),true);
